@@ -380,18 +380,19 @@
       window.CUSTOMER_ID = customerId;
       
       // Fetch and display tokens inside <span id="customer-tokens"></span>
+      // Fetch and display tokens inside <span id="customer-tokens"></span>
       async function getAICredits(customerId) {
         const tokensSpan = document.getElementById('customer-tokens');
-      
+
         if (!customerId) {
           console.warn("No customer ID provided.");
           if (tokensSpan) tokensSpan.textContent = "0";
           return 0;
         }
-      
-        // Uses the existing baseUrl_tokens variable from your script
+
+        // Endpoint targeting your node_tokens_v29_AIB_TEST2 Cloud Function
         const targetUrl = `${baseUrl_tokens}/get-tokens/${customerId}`;
-          
+    
         try {
           const response = await fetch(targetUrl, {
             method: 'GET',
@@ -409,10 +410,10 @@
             return 0;
           }
       
-          // Assign to window so your updateTokens function can access it later
+          // Global or modular storage fallback
           window.creditAccounts = data.creditAccounts;
           const currentCreditAccount = window.creditAccounts[0];
-          const balance = currentCreditAccount?.balance?.amount ?? 0;
+          const balance = currentCreditAccount?.balance?.amount ?? "0";
       
           // Update display span
           if (tokensSpan) {
@@ -426,6 +427,11 @@
           return 0;
         }
       }
+            
+      // Call the function using window.CUSTOMER_ID:
+      getAICredits(window.CUSTOMER_ID).then(balance => {
+          console.log("Current AI Credits Balance:", balance);
+      });
 
       async function updateTokens(messageId, inputTokens, outputTokens, currencyChosen, calculatedCostFromBot) {
         const cost = calculateTokenConsumption(inputTokens, outputTokens, currencyChosen, calculatedCostFromBot);
