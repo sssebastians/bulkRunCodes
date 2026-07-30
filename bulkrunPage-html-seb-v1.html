@@ -67,7 +67,7 @@
         <div class="chatbot-window">
           <div class="tokens-display">
             <div class="tokens-display-left">
-              <div id="shopify-customer" data-customer-id=""></div>
+              <div id="shopify-customer" data-customer-id="{{ customer.id }}"></div>              
               <i class="fa-solid fa-coins"></i> AI credits: <span id="customer-tokens"></span>
               <select id="credit-account-selector" class="credit-account-selector"></select>
               <a href="https://aib-test2.myshopify.com/products/dummy-product" class="buy-credits-btn" target="_blank" rel="noopener"><i class="fa-solid fa-cart-plus"></i> Buy Credits</a>
@@ -372,16 +372,12 @@
         ragApp.setAttribute('data-shop-domain', shopDomain || '');
       }
       
-      if (!customerId) {
-          document.body.innerHTML = ` ... `;
-          return;
-      }
-      
       var customerEl = document.getElementById('shopify-customer');
-      if (customerEl) {
+    if (customerEl) {
         customerEl.setAttribute('data-customer-id', customerId);
-      }
-      CUSTOMER_ID = customerEl?.getAttribute('data-customer-id') || null;
+    }
+    
+    window.CUSTOMER_ID = customerId;
 
       
       // 4. Interface Mode Switching Logic
