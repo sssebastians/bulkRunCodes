@@ -380,49 +380,49 @@
       window.CUSTOMER_ID = customerId;
       
       async function getAICredits(customerId) {
-        if (!customerId) {
-          console.warn("No customer ID provided.");
-          return 0;
-        }
-      
-        // Call Cloud Run endpoint directly without corsproxy.io
-        const targetUrl = `https://flashcard-gen-40834982812.us-central1.run.app/get-tokens/${customerId}`;
-      
-        try {
-          const response = await fetch(targetUrl, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-            }
-          });
-      
-          if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-          
-          const data = await response.json();
-      
-          if (!data || !data.creditAccounts || data.creditAccounts.length === 0) {
-            const tokensSpan = document.getElementById('customer-tokens');
-            if (tokensSpan) tokensSpan.textContent = "0";
-            return 0;
+  if (!customerId) {
+    console.warn("No customer ID provided.");
+    return 0;
+  }
+
+  // Call Cloud Run endpoint directly without corsproxy.io
+  const targetUrl = `https://flashcard-gen-40834982812.us-central1.run.app/get-tokens/${customerId}`;
+    
+      try {
+        const response = await fetch(targetUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
           }
-      
-          const creditAccount = data.creditAccounts[0];
-          const balance = creditAccount?.balance?.amount || 0;
-      
-          // Update display span
-          const tokensSpan = document.getElementById('customer-tokens');
-          if (tokensSpan) {
-            tokensSpan.textContent = balance;
-          }
-      
-          return balance;
-        } catch (err) {
-          console.error('Error fetching AI credits:', err);
+        });
+    
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        
+        const data = await response.json();
+    
+        if (!data || !data.creditAccounts || data.creditAccounts.length === 0) {
           const tokensSpan = document.getElementById('customer-tokens');
           if (tokensSpan) tokensSpan.textContent = "0";
           return 0;
         }
+    
+        const creditAccount = data.creditAccounts[0];
+        const balance = creditAccount?.balance?.amount || 0;
+    
+        // Update display span
+        const tokensSpan = document.getElementById('customer-tokens');
+        if (tokensSpan) {
+          tokensSpan.textContent = balance;
+        }
+    
+        return balance;
+      } catch (err) {
+        console.error('Error fetching AI credits:', err);
+        const tokensSpan = document.getElementById('customer-tokens');
+        if (tokensSpan) tokensSpan.textContent = "0";
+        return 0;
       }
+    }
             
       // Call the function using your global CUSTOMER_ID:
       getAICredits(window.CUSTOMER_ID).then(balance => {
