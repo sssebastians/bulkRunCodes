@@ -373,43 +373,53 @@
       }
       
       var customerEl = document.getElementById('shopify-customer');
-    if (customerEl) {
-        customerEl.setAttribute('data-customer-id', customerId);
-    }
+      if (customerEl) {
+          customerEl.setAttribute('data-customer-id', customerId);
+      }
     
-    window.CUSTOMER_ID = customerId;
+      window.CUSTOMER_ID = customerId;
       
-      if (window.CUSTOMER_ID) {
-        // 1. Define base token endpoint URL
-       var targetUrl = "https://flashcard-gen-40834982812.us-central1.run.app/get-tokens/" + window.CUSTOMER_ID;
-        var proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl);
-      
-      fetch(proxyUrl)
-        .then(function(res) {
-            if (!res.ok) throw new Error("HTTP error " + res.status);
-            return res.json();
-        })
-        .then(function(wrapperData) {
-            // allorigins wraps the JSON response inside wrapperData.contents
-            var data = JSON.parse(wrapperData.contents);
+      async function getAICredits(customerId) {
+    if (!customerId) {
+        console.warn("No customer ID provided.");
+        return 0;
+    }
 
-            var tokensSpan = document.getElementById('customer-tokens');
-            if (!tokensSpan) return;
+    const targetUrl = `https://flashcard-gen-40834982812.us-central1.run.app/get-tokens/${customerId}`;
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
 
-            if (!data.creditAccounts || Object.keys(data.creditAccounts).length === 0) {
-                tokensSpan.textContent = "0";
-                return;
-            }
+    try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        
+        const wrapperData = await response.json();
+        const data = JSON.parse(wrapperData.contents);
 
-            var creditAccount = data.creditAccounts[0];
-            if (creditAccount && creditAccount.balance) {
-                tokensSpan.textContent = creditAccount.balance.amount;
-            }
-        })
-        .catch(function(err) {
-            console.error('Error fetching tokens on init:', err);
-        });
+        if (!data.creditAccounts || Object.keys(data.creditAccounts).length === 0) {
+            return 0;
+        }
+
+        const creditAccount = data.creditAccounts[0];
+        const balance = creditAccount?.balance?.amount || 0;
+
+        // Update the span in the DOM
+        const tokensSpan = document.getElementById('customer-tokens');
+        if (tokensSpan) {
+            tokensSpan.textContent = balance;
+        }
+
+        return balance;
+    } catch (err) {
+        console.error('Error fetching AI credits:', err);
+        return 0;
+    }
 }
+      
+// Call the function using your global CUSTOMER_ID:
+getAICredits(window.CUSTOMER_ID).then(balance => {
+    console.log("Current AI Credits Balance:", balance);
+});
+
       // 4. Interface Mode Switching Logic
       var modeSelector = document.getElementById('sidebar-mode-selector');
       var chatbotUI = document.getElementById('chatbot-main-ui');
