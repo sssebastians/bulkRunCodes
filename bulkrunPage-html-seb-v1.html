@@ -561,23 +561,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  async function getCategoriesList() {
+async function getCategoriesList() {
+    const secretKey = window.langya_secret_key || '';
     const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
         body: JSON.stringify({ collectionName: 'pageMaster' })
     });
     const dat_pages = await resp_pages.json();
-    const pageMasterData = dat_pages.results;
-    const siteData = pageMasterData.filter((data) => data.id == storeId)[0];
+    const pageMasterData = dat_pages.results || [];
+    const siteData = pageMasterData.find((data) => data.id == storeId);
+
+    if (!siteData) return;
 
     const resp_cat = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
         body: JSON.stringify({ collectionName: 'pageList' })
     });
     const dat_cat = await resp_cat.json();
-    const categoriesList = dat_cat.results;
+    const categoriesList = dat_cat.results || [];
 
     categoriesList.forEach((category) => {
         const name = category['page-list'];
@@ -585,27 +588,32 @@ document.addEventListener('DOMContentLoaded', function() {
             botsCategories.push(category);
         }
     });
-  }
+}
 
-  async function getBotsData() {
+async function getBotsData() {
     try {
+        const secretKey = window.langya_secret_key || '';
         const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+            headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
             body: JSON.stringify({ collectionName: 'pageMaster' })
         });
         const dat_pages = await resp_pages.json();
-        const pageMasterData = dat_pages.results;
-        const tableName = pageMasterData.filter(data => data.id == storeId)[0]['endpoint-table-name'];
-        DataEntry = pageMasterData.filter(data => data.id == storeId)[0]['Data Entry'];
+        const pageMasterData = dat_pages.results || [];
+        const matchedPage = pageMasterData.find(data => data.id == storeId);
+
+        if (!matchedPage) return [];
+
+        const tableName = matchedPage['endpoint-table-name'];
+        DataEntry = matchedPage['Data Entry'];
 
         const resp_tab = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+            headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
             body: JSON.stringify({ collectionName: tableName })
         });
         const dat_tab = await resp_tab.json();
-        const results = dat_tab.results;
+        const results = dat_tab.results || [];
         botsList = [];
 
         results.forEach(doc => {
@@ -623,25 +631,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        populateBotSelector();
+        if (typeof populateBotSelector === 'function') populateBotSelector();
         return botsList;
     } catch (error) {
-        console.error(error);
+        console.error('Error in getBotsData:', error);
     }
-  }
+}
 
-  async function fetchCurrencies() {
-    const resp_rate = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
-        body: JSON.stringify({ collectionName: 'fxRate' })
-    });
-    const dat_rate = await resp_rate.json();
-    const fxRates = dat_rate.results;
-    fxRates.forEach(exchange => {
-        currencies[exchange['quote-currency']] = exchange['Rate'];
-    });
-  }
+async function fetchCurrencies() {
+    try {
+        const secretKey = window.langya_secret_key || '';
+        const resp_rate = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
+            body: JSON.stringify({ collectionName: 'fxRate' })
+        });
+        const dat_rate = await resp_rate.json();
+        const fxRates = dat_rate.results || [];
+        fxRates.forEach(exchange => {
+            currencies[exchange['quote-currency']] = exchange['Rate'];
+        });
+    } catch (error) {
+        console.error('Error in fetchCurrencies:', error);
+    }
+}
 
   async function initApp() {
     try {
