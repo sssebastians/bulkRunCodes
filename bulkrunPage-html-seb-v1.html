@@ -343,9 +343,6 @@
   <!-- Dynamic Shopify Parameter & Mode Logic -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Base URL configuration for token management
-      const baseUrl_tokens = 'https://us-central1-project-mb-bend.cloudfunctions.net/node_tokens_v29_AIB_TEST2';
-
       // 1. Read parameters passed via Shopify iframe URL
       var urlParams = new URLSearchParams(window.location.search);
       var customerId = urlParams.get('customer_id');
@@ -383,16 +380,16 @@
       // Fetch and display tokens inside <span id="customer-tokens"></span>
       async function getAICredits(customerId) {
         const tokensSpan = document.getElementById('customer-tokens');
-
+      
         if (!customerId) {
           console.warn("No customer ID provided.");
           if (tokensSpan) tokensSpan.textContent = "0";
           return 0;
         }
-
-        // Endpoint targeting your node_tokens_v29_AIB_TEST2 Cloud Function
+      
+        // Uses the existing baseUrl_tokens variable from your script
         const targetUrl = `${baseUrl_tokens}/get-tokens/${customerId}`;
-    
+          
         try {
           const response = await fetch(targetUrl, {
             method: 'GET',
@@ -410,10 +407,10 @@
             return 0;
           }
       
-          // Global or modular storage fallback
+          // Assign to window so your updateTokens function can access it later
           window.creditAccounts = data.creditAccounts;
           const currentCreditAccount = window.creditAccounts[0];
-          const balance = currentCreditAccount?.balance?.amount ?? "0";
+          const balance = currentCreditAccount?.balance?.amount ?? 0;
       
           // Update display span
           if (tokensSpan) {
