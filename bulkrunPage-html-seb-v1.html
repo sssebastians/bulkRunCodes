@@ -349,11 +349,8 @@
       var customerEmail = urlParams.get('customer_email');
       var shopDomain = urlParams.get('shop');
       
-      var customerEl = document.getElementById('shopify-customer');
-      if (customerEl) {
-          customerEl.setAttribute('data-customer-id', customerId);
-      }
-      CUSTOMER_ID = customerEl?.getAttribute('data-customer-id') || null;
+ 
+
       // 2. Auth Fallback: If no customer ID in iframe URL, show login screen
       if (!customerId) {
         document.body.innerHTML = `
@@ -374,12 +371,19 @@
         ragApp.setAttribute('data-customer-email', customerEmail || '');
         ragApp.setAttribute('data-shop-domain', shopDomain || '');
       }
-
+      
+      if (!customerId) {
+          document.body.innerHTML = ` ... `;
+          return;
+      }
+      
       var customerEl = document.getElementById('shopify-customer');
       if (customerEl) {
         customerEl.setAttribute('data-customer-id', customerId);
       }
+      CUSTOMER_ID = customerEl?.getAttribute('data-customer-id') || null;
 
+      
       // 4. Interface Mode Switching Logic
       var modeSelector = document.getElementById('sidebar-mode-selector');
       var chatbotUI = document.getElementById('chatbot-main-ui');
