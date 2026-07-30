@@ -342,170 +342,169 @@
 
   <!-- Dynamic Shopify Parameter & Mode Logic -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Base URL configuration for token management
-      const baseUrl_tokens = 'https://us-central1-project-mb-bend.cloudfunctions.net/node_tokens_v29_AIB_TEST2';
-      // 1. Read parameters passed via Shopify iframe URL
-      var urlParams = new URLSearchParams(window.location.search);
-      var customerId = urlParams.get('customer_id');
-      var customerEmail = urlParams.get('customer_email');
-      var shopDomain = urlParams.get('shop');
-      
-      // 2. Auth Fallback: If no customer ID in iframe URL, show login screen
-      if (!customerId) {
-        document.body.innerHTML = `
-          <div style="text-align: center; padding: 100px 20px; font-family: sans-serif;">
-            <h2 style="color: #333; margin-bottom: 20px;">
-              <i class="fa-solid fa-lock"></i> Authentication Required
-            </h2>
-            <p style="color: #666; margin-bottom: 30px;">You must be logged in to access the RAG Bot.</p>
-          </div>
-        `;
-        return;
-      }
+document.addEventListener('DOMContentLoaded', function() {
+  // Base URL configuration for token management
+  const baseUrl_tokens = 'https://us-central1-project-mb-bend.cloudfunctions.net/node_tokens_v29_AIB_TEST2';
+  
+  // 1. Read parameters passed via Shopify iframe URL
+  var urlParams = new URLSearchParams(window.location.search);
+  var customerId = urlParams.get('customer_id');
+  var customerEmail = urlParams.get('customer_email');
+  var shopDomain = urlParams.get('shop');
+  
+  // 2. Auth Fallback: If no customer ID in iframe URL, show login screen
+  if (!customerId) {
+    document.body.innerHTML = `
+      <div style="text-align: center; padding: 100px 20px; font-family: sans-serif;">
+        <h2 style="color: #333; margin-bottom: 20px;">
+          <i class="fa-solid fa-lock"></i> Authentication Required
+        </h2>
+        <p style="color: #666; margin-bottom: 30px;">You must be logged in to access the RAG Bot.</p>
+      </div>
+    `;
+    return;
+  }
 
-      // 3. Inject attributes dynamically into elements
-      var ragApp = document.getElementById('rag-app');
-      if (ragApp) {
-        ragApp.setAttribute('data-customer-id', customerId);
-        ragApp.setAttribute('data-customer-email', customerEmail || '');
-        ragApp.setAttribute('data-shop-domain', shopDomain || '');
-      }
-      
-      var customerEl = document.getElementById('shopify-customer');
-      if (customerEl) {
-          customerEl.setAttribute('data-customer-id', customerId);
-      }
-    
-      window.CUSTOMER_ID = customerId;
-      
-      // Fetch and display tokens inside <span id="customer-tokens"></span>
-      async function getAICredits(customerId) {
-        const tokensSpan = document.getElementById('customer-tokens');
+  // 3. Inject attributes dynamically into elements
+  var ragApp = document.getElementById('rag-app');
+  if (ragApp) {
+    ragApp.setAttribute('data-customer-id', customerId);
+    ragApp.setAttribute('data-customer-email', customerEmail || '');
+    ragApp.setAttribute('data-shop-domain', shopDomain || '');
+  }
+  
+  var customerEl = document.getElementById('shopify-customer');
+  if (customerEl) {
+      customerEl.setAttribute('data-customer-id', customerId);
+  }
 
-        if (!customerId) {
-          console.warn("No customer ID provided.");
-          if (tokensSpan) tokensSpan.textContent = "0";
-          return 0;
-        }
+  window.CUSTOMER_ID = customerId;
+  
+  // Fetch and display tokens inside <span id="customer-tokens"></span>
+  async function getAICredits(customerId) {
+    const tokensSpan = document.getElementById('customer-tokens');
 
-        // Endpoint targeting your node_tokens_v29_AIB_TEST2 Cloud Function
-        const targetUrl = `${baseUrl_tokens}/get-tokens/${customerId}`;
-    
-        try {
-          const response = await fetch(targetUrl, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-            }
-          });
-      
-          if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-          
-          const data = await response.json();
-      
-          if (!data || !data.creditAccounts || Object.keys(data.creditAccounts).length === 0) {
-            if (tokensSpan) tokensSpan.textContent = "0";
-            return 0;
-          }
-      
-          // Global or modular storage fallback
-          window.creditAccounts = data.creditAccounts;
-          const currentCreditAccount = window.creditAccounts[0];
-          const balance = currentCreditAccount?.balance?.amount ?? "0";
-      
-          // Update display span
-          if (tokensSpan) {
-            tokensSpan.textContent = balance;
-          }
-      
-          return balance;
-        } catch (err) {
-          console.error('Error fetching AI credits:', err);
-          if (tokensSpan) tokensSpan.textContent = "0";
-          return 0;
-        }
-      }
-            
-      // Call the function using window.CUSTOMER_ID:
-      getAICredits(window.CUSTOMER_ID).then(balance => {
-          console.log("Current AI Credits Balance:", balance);
+    if (!customerId) {
+      console.warn("No customer ID provided.");
+      if (tokensSpan) tokensSpan.textContent = "0";
+      return 0;
+    }
+
+    const targetUrl = `${baseUrl_tokens}/get-tokens/${customerId}`;
+
+    try {
+      const response = await fetch(targetUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
       });
+  
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+      
+      const data = await response.json();
+  
+      if (!data || !data.creditAccounts || Object.keys(data.creditAccounts).length === 0) {
+        if (tokensSpan) tokensSpan.textContent = "0";
+        return 0;
+      }
+  
+      window.creditAccounts = data.creditAccounts;
+      const currentCreditAccount = window.creditAccounts[0];
+      const balance = currentCreditAccount?.balance?.amount ?? "0";
+  
+      if (tokensSpan) {
+        tokensSpan.textContent = balance;
+      }
+  
+      return balance;
+    } catch (err) {
+      console.error('Error fetching AI credits:', err);
+      if (tokensSpan) tokensSpan.textContent = "0";
+      return 0;
+    }
+  }
 
-      async function updateTokens(messageId, inputTokens, outputTokens, currencyChosen, calculatedCostFromBot) {
-        const cost = calculateTokenConsumption(inputTokens, outputTokens, currencyChosen, calculatedCostFromBot);
-        const account = creditAccounts.filter(acc => acc.balance.currencyCode == currencyChosen)[0];
-        let updatedValue = account.balance.amount - cost;
-        let botUsed = currentBot.name;
-        let amount = cost;
-    
-        try {
-            const response = await fetch(`${baseUrl_tokens}/update-tokens`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    customerId: CUSTOMER_ID, 
-                    tokenValue: updatedValue, 
-                    messageId: messageId, 
-                    botUsed: botUsed, 
-                    previousAmount: currentCreditAccount.balance.amount, 
-                    amount: amount, 
-                    currency: currencyChosen 
-                }),
-            });
-    
-            if (!response.ok) {
-                console.error('Failed to update tokens on backend');
-                return currentCreditAccount.balance.amount;
-            }
-    
-            fetchTokens();
-            return updatedValue;
-        } catch (error) {
-            console.error('Error updating tokens:', error);
-            if (typeof sendLogToBackend === 'function') {
-                sendLogToBackend(`Error updating tokens: ${error}`);
-            }
+  async function updateTokens(messageId, inputTokens, outputTokens, currencyChosen, calculatedCostFromBot) {
+    const cost = calculateTokenConsumption(inputTokens, outputTokens, currencyChosen, calculatedCostFromBot);
+    const account = creditAccounts.filter(acc => acc.balance.currencyCode == currencyChosen)[0];
+    let updatedValue = account.balance.amount - cost;
+    let botUsed = currentBot.name;
+    let amount = cost;
+
+    try {
+        const response = await fetch(`${baseUrl_tokens}/update-tokens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                customerId: CUSTOMER_ID, 
+                tokenValue: updatedValue, 
+                messageId: messageId, 
+                botUsed: botUsed, 
+                previousAmount: currentCreditAccount.balance.amount, 
+                amount: amount, 
+                currency: currencyChosen 
+            }),
+        });
+
+        if (!response.ok) {
+            console.error('Failed to update tokens on backend');
             return currentCreditAccount.balance.amount;
         }
+
+        getAICredits(CUSTOMER_ID);
+        return updatedValue;
+    } catch (error) {
+        console.error('Error updating tokens:', error);
+        if (typeof sendLogToBackend === 'function') {
+            sendLogToBackend(`Error updating tokens: ${error}`);
+        }
+        return currentCreditAccount.balance.amount;
     }
+  }
+
+  async function getChatResponse(query, msgId, creditAccount) {
+    console.log('current bot:', currentBot);
+    console.log('bot URL:', currentBot.managerUrl);
+    console.log('async mode:', asyncMode);
+
+    // Safely reference DOM Elements
+    const inputFolderEl = document.getElementById('input-folder');
+    const outputFolderEl = document.getElementById('output-folder');
+
+    let inputFolderValue = inputFolderEl ? inputFolderEl.value.trim() : '';
+    let outputFolderValue = outputFolderEl ? outputFolderEl.value.trim() : '';
     
-    async function getChatResponse(query, msgId, creditAccount) {
-        console.log('current bot:', currentBot);
-        console.log('bot URL:', currentBot.managerUrl);
-        console.log('async mode:', asyncMode);
-        let inputFolderValue = inputFolder.value.trim();
-        let outputFolderValue = outputFolder.value.trim();
-        
-        try {
-            const ipAddress = await getIPadress();
-            console.log(`ipAddress: ${ipAddress}`);
-    
-            limitedHistory = chatHistory.slice(-10);
-            limitedUserHistory = userHistory.slice(-11, -1);
-            let amount = currentBot.cost;
-            let response;
-    
-            if (attachedFiles.length > 0) {
-                const formData = new FormData();
-                formData.append('user_query', query);
-                formData.append('chat_history', JSON.stringify(limitedHistory));
-                formData.append('user_history', JSON.stringify(limitedUserHistory));
-                formData.append('msgId', msgId);
-                formData.append('userId', CUSTOMER_ID);
-                formData.append('roomId', currentRoomId);
-                formData.append('amount', amount);
-                formData.append('beforeBalance', creditAccount.balance.amount);
-                formData.append('customer_ip_address', ipAddress);
-                formData.append('input_folder', null);
-                formData.append('storageNo', mapper[sourceMode] || 1);
-                formData.append('asyncMode', asyncMode);
-                formData.append('email', email);
-                formData.append('pageName', storeId);
-                formData.append('dataEntryFlag', currentBot["Data Entry"]);
-                formData.append('modelId', currentBot["endpoint-id"]);
+    // Fallback to manually entered ID if window.selectedFolderId is empty
+    let effectiveInputFolder = window.selectedFolderId || inputFolderValue || null;
+    let effectiveOutputFolder = outputFolderValue || effectiveInputFolder;
+
+    try {
+        const ipAddress = await getIPadress();
+        console.log(`ipAddress: ${ipAddress}`);
+
+        limitedHistory = chatHistory.slice(-10);
+        limitedUserHistory = userHistory.slice(-11, -1);
+        let amount = currentBot.cost;
+        let response;
+
+        if (attachedFiles.length > 0) {
+            const formData = new FormData();
+            formData.append('user_query', query);
+            formData.append('chat_history', JSON.stringify(limitedHistory));
+            formData.append('user_history', JSON.stringify(limitedUserHistory));
+            formData.append('msgId', msgId);
+            formData.append('userId', CUSTOMER_ID);
+            formData.append('roomId', currentRoomId);
+            formData.append('amount', amount);
+            formData.append('beforeBalance', creditAccount.balance.amount);
+            formData.append('customer_ip_address', ipAddress);
+            formData.append('input_folder', effectiveInputFolder);
+            formData.append('output_folder', effectiveOutputFolder);
+            formData.append('storageNo', mapper[sourceMode] || 1);
+            formData.append('asyncMode', asyncMode);
+            formData.append('email', email);
+            formData.append('pageName', storeId);
+            formData.append('dataEntryFlag', currentBot["Data Entry"]);
+            formData.append('modelId', currentBot["endpoint-id"]);
 
             attachedFiles.forEach((file) => {
                 formData.append('files', file);
@@ -530,8 +529,8 @@
                     amount: amount,
                     beforeBalance: creditAccount.balance.amount,
                     customer_ip_address: ipAddress,
-                    input_folder: selectedFolderId,
-                    output_folder: outputFolderValue || selectedFolderId,
+                    input_folder: effectiveInputFolder,
+                    output_folder: effectiveOutputFolder,
                     storageNo: mapper[sourceMode] || 1,
                     asyncMode: asyncMode,
                     email: email,
@@ -545,31 +544,24 @@
         if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
         attachedFiles = [];
-        attachBtn.textContent = '+';
-        fileInput.value = '';
-        selectedFileName.textContent = '';
+        if (attachBtn) attachBtn.textContent = '+';
+        if (fileInput) fileInput.value = '';
+        if (selectedFileName) selectedFileName.textContent = '';
 
-        const provider_cost = data?.provider_cost;
-        const generation_id = data?.generation_id;
         const calculatedCost = data?.calculatedCost;
 
         if (data.answer != 'Sorry, an error occurred. Please try again.') {
             await updateTokens(msgId, data.inputTokens, data.outputTokens, creditAccount.balance.currencyCode, calculatedCost);
         }
 
-        console.log(data);
         return data.answer;
     } catch (error) {
         console.error('Error getting chat response:', error);
         return 'Sorry, an error occurred. Please try again.';
     }
-}
+  }
 
-function checkBotData() {
-    if (currentBot.cost == null || currentBot.cost <= 0 || currentBot.currency == null) return "error";
-}
-
-async function getCategoriesList() {
+  async function getCategoriesList() {
     const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
@@ -593,9 +585,9 @@ async function getCategoriesList() {
             botsCategories.push(category);
         }
     });
-}
+  }
 
-async function getBotsData() {
+  async function getBotsData() {
     try {
         const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
             method: 'POST',
@@ -606,7 +598,6 @@ async function getBotsData() {
         const pageMasterData = dat_pages.results;
         const tableName = pageMasterData.filter(data => data.id == storeId)[0]['endpoint-table-name'];
         DataEntry = pageMasterData.filter(data => data.id == storeId)[0]['Data Entry'];
-        console.log(pageMasterData);
 
         const resp_tab = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
             method: 'POST',
@@ -615,7 +606,6 @@ async function getBotsData() {
         });
         const dat_tab = await resp_tab.json();
         const results = dat_tab.results;
-        console.log(JSON.stringify(results));
         botsList = [];
 
         results.forEach(doc => {
@@ -633,15 +623,14 @@ async function getBotsData() {
             }
         });
 
-        console.log(JSON.stringify(botsList));
         populateBotSelector();
         return botsList;
     } catch (error) {
         console.error(error);
     }
-}
+  }
 
-async function fetchCurrencies() {
+  async function fetchCurrencies() {
     const resp_rate = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
@@ -652,13 +641,11 @@ async function fetchCurrencies() {
     fxRates.forEach(exchange => {
         currencies[exchange['quote-currency']] = exchange['Rate'];
     });
-}
+  }
 
-// ------------------------------------------------------------------
-// 2. AUTOMATIC EXECUTION ON LOAD
-// ------------------------------------------------------------------
-async function initApp() {
+  async function initApp() {
     try {
+        await getAICredits(window.CUSTOMER_ID);
         await fetchCurrencies();
         await getCategoriesList();
         await getBotsData();
@@ -666,220 +653,171 @@ async function initApp() {
     } catch (err) {
         console.error("Initialization error:", err);
     }
-}
+  }
 
-initApp();
-      
-      // 4. Interface Mode Switching Logic
-      var modeSelector = document.getElementById('sidebar-mode-selector');
-      var chatbotUI = document.getElementById('chatbot-main-ui');
-      var quizUI = document.getElementById('quiz-main-ui');
-      var ragModelSection = document.getElementById('rag-model-section');
-      var ragDriveStatus = document.getElementById('rag-drive-status');
-      var folderInputs = document.getElementById('folder-inputs');
-      var settingsNavButton = document.getElementById('settings-nav-btn');
-      var inputProviderSelector = document.getElementById('input-provider-selector');
-      var outputProviderSelector = document.getElementById('output-provider-selector');
-      var unifiedInputButton = document.getElementById('choose-input-folder');
-      var unifiedOutputButton = document.getElementById('choose-output-folder');
+  initApp();
 
-      var inputButtonMap = {
-        dropbox: document.getElementById('choose-folder'),
-        gdrive: document.getElementById('choose-gdrive'),
-        onedrive: document.getElementById('choose-od-input')
-      };
+  // 4. Interface Mode Switching Logic
+  var modeSelector = document.getElementById('sidebar-mode-selector');
+  var chatbotUI = document.getElementById('chatbot-main-ui');
+  var quizUI = document.getElementById('quiz-main-ui');
+  var ragModelSection = document.getElementById('rag-model-section');
+  var ragDriveStatus = document.getElementById('rag-drive-status');
+  var folderInputs = document.getElementById('folder-inputs');
+  var settingsNavButton = document.getElementById('settings-nav-btn');
+  var inputProviderSelector = document.getElementById('input-provider-selector');
+  var outputProviderSelector = document.getElementById('output-provider-selector');
+  var unifiedInputButton = document.getElementById('choose-input-folder');
+  var unifiedOutputButton = document.getElementById('choose-output-folder');
 
-      var outputButtonMap = {
-        dropbox: document.getElementById('choose-db-output'),
-        gdrive: document.getElementById('choose-output'),
-        onedrive: document.getElementById('choose-od-output')
-      };
+  var inputButtonMap = {
+    dropbox: document.getElementById('choose-folder'),
+    gdrive: document.getElementById('choose-gdrive'),
+    onedrive: document.getElementById('choose-od-input')
+  };
 
-      window.chatModeStates = {
-        rag: { html: '', chatHistory: [], userHistory: [] },
-        llm: { html: '', chatHistory: [], userHistory: [] },
-        quiz: { html: '', chatHistory: [], userHistory: [] },
-        bulkrun: { html: '', chatHistory: [], userHistory: [] }
-      };
-      var previousMode = modeSelector ? modeSelector.value : 'rag';
-      var currentExamScreen = window.ExamApp && window.ExamApp.state ? window.ExamApp.state.screen : 'dashboard';
+  var outputButtonMap = {
+    dropbox: document.getElementById('choose-db-output'),
+    gdrive: document.getElementById('choose-output'),
+    onedrive: document.getElementById('choose-od-output')
+  };
 
-      function updateModeDisplay(mode) {
-        if (previousMode !== mode) {
-          var msgDiv = document.querySelector('.chatbot-messages');
-          if (msgDiv && window.chatModeStates[previousMode]) {
-            window.chatModeStates[previousMode] = {
-              html: msgDiv.innerHTML,
-              chatHistory: typeof window.chatHistory !== 'undefined' ? [...window.chatHistory] : [],
-              userHistory: typeof window.userHistory !== 'undefined' ? [...window.userHistory] : []
-            };
-          }
-        }
+  window.chatModeStates = {
+    rag: { html: '', chatHistory: [], userHistory: [] },
+    llm: { html: '', chatHistory: [], userHistory: [] },
+    quiz: { html: '', chatHistory: [], userHistory: [] },
+    bulkrun: { html: '', chatHistory: [], userHistory: [] }
+  };
+  var previousMode = modeSelector ? modeSelector.value : 'rag';
+  var currentExamScreen = window.ExamApp && window.ExamApp.state ? window.ExamApp.state.screen : 'dashboard';
 
-        if (previousMode !== mode) {
-          var msgDiv = document.querySelector('.chatbot-messages');
-          if (msgDiv && window.chatModeStates[mode]) {
-            msgDiv.innerHTML = window.chatModeStates[mode].html || '';
-            window.chatHistory = [...window.chatModeStates[mode].chatHistory];
-            window.userHistory = [...window.chatModeStates[mode].userHistory];
-          }
-        }
-        
-        previousMode = mode;
-
-        if (modeSelector) modeSelector.value = mode;
-
-        var chatbotInput = document.querySelector('.chatbot-input');
-
-        if (mode === 'quiz') {
-          if (currentExamScreen === 'dashboard') {
-            if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
-            if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
-            if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
-          } else {
-            if (chatbotUI) chatbotUI.style.setProperty('display', 'none', 'important');
-            if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');
-            if (chatbotInput) chatbotInput.style.setProperty('display', 'none', 'important');
-          }
-
-          if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-          if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
-          
-          if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'none';
-          if (document.getElementById('sidebar-mode-selector')) document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
-          if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'flex';
-          if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'flex';
-          if (folderInputs) folderInputs.style.display = 'none';
-        } else {
-          if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
-          if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
-          if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
-          
-          if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'inline-block';
-          if (document.getElementById('sidebar-mode-selector')) document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
-          if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'none';
-          if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'none';
-          if (folderInputs) folderInputs.style.display = mode === 'bulkrun' ? 'flex' : 'none';
-
-          if (mode === 'llm') {
-            if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-            if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
-          } else {
-            if (ragModelSection) ragModelSection.style.setProperty('display', 'flex', 'important');
-            if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important');
-          }
-
-          if (mode === 'bulkrun') {
-            if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-            if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
-          }
-        }
-      }
-
-      function clickMappedButton(map, selector) {
-        var provider = selector ? selector.value : 'dropbox';
-        var target = map[provider];
-        if (target) target.click();
-      }
-
-      if (unifiedInputButton) {
-        unifiedInputButton.addEventListener('click', function() {
-          clickMappedButton(inputButtonMap, inputProviderSelector);
-        });
-      }
-
-      if (unifiedOutputButton) {
-        unifiedOutputButton.addEventListener('click', function() {
-          clickMappedButton(outputButtonMap, outputProviderSelector);
-        });
-      }
-
-      if (settingsNavButton) {
-        settingsNavButton.addEventListener('click', function() {
-          window.open('/pages/settings-v15', '_blank', 'noopener,noreferrer');
-        });
-      }
-
-      function bindSelectedFolderVisibility(elementId) {
-        var element = document.getElementById(elementId);
-        if (!element) return;
-
-        function syncVisibility() {
-          var hasValue = (element.textContent || '').trim().length > 0;
-          element.style.display = hasValue ? '' : 'none';
-        }
-
-        syncVisibility();
-        var observer = new MutationObserver(syncVisibility);
-        observer.observe(element, { childList: true, subtree: true, characterData: true });
-      }
-
-      bindSelectedFolderVisibility('selected-input-folder');
-      bindSelectedFolderVisibility('selected-output-folder');
-
-      document.addEventListener('exam:state-changed', function(e) {
-        if (e.detail && e.detail.screen) {
-          currentExamScreen = e.detail.screen;
-          if (modeSelector && modeSelector.value === 'quiz') {
-            updateModeDisplay('quiz');
-          }
-        }
-      });
-
-      if (modeSelector && chatbotUI && quizUI) {
-        updateModeDisplay(modeSelector.value);
-        modeSelector.addEventListener('change', function(e) {
-          updateModeDisplay(e.target.value);
-        });
-      }
-      
-      var btnEdit = document.getElementById('quiz-generate-edit-btn');
-      var btnStart = document.getElementById('quiz-generate-start-btn');
-      var btnUpload = document.getElementById('chatbot-upload-questions-btn');
-      var promptInput = document.getElementById('chatbot-input-field');
-      
-      function getQuizParams() {
-        return {
-          prompt: promptInput ? promptInput.value.trim() : '',
-          quizTitle: document.getElementById('quiz-chat-title') ? document.getElementById('quiz-chat-title').value.trim() : '',
-          quizSubtitle: document.getElementById('quiz-chat-subtitle') ? document.getElementById('quiz-chat-subtitle').value.trim() : '',
-          numMc: parseInt(document.getElementById('quiz-param-mc').value || '5', 10),
-          numQa: parseInt(document.getElementById('quiz-param-qa').value || '0', 10),
-          passThreshold: parseInt(document.getElementById('quiz-param-pass').value || '60', 10),
-          countdownTime: parseInt(document.getElementById('quiz-param-time').value || '30', 10),
-          shuffleQuestions: document.getElementById('quiz-param-shuffle').checked
+  function updateModeDisplay(mode) {
+    if (previousMode !== mode) {
+      var msgDiv = document.querySelector('.chatbot-messages');
+      if (msgDiv && window.chatModeStates[previousMode]) {
+        window.chatModeStates[previousMode] = {
+          html: msgDiv.innerHTML,
+          chatHistory: typeof window.chatHistory !== 'undefined' ? [...window.chatHistory] : [],
+          userHistory: typeof window.userHistory !== 'undefined' ? [...window.userHistory] : []
         };
       }
-      
-      if (btnEdit) {
-        btnEdit.addEventListener('click', function(e) {
-          e.preventDefault();
-          var p = getQuizParams();
-          if (!p.prompt) return alert('Please enter a prompt to generate questions.');
-          if (!p.quizTitle) return alert('Please enter a Quiz Title.');
-          if (p.numMc === 0 && p.numQa === 0) return alert('Please enter at least one question (MC or Q&A).');
-          if (window.generateQuizFromChatbox) window.generateQuizFromChatbox(p, 'edit');
-        });
+    }
+
+    if (previousMode !== mode) {
+      var msgDiv = document.querySelector('.chatbot-messages');
+      if (msgDiv && window.chatModeStates[mode]) {
+        msgDiv.innerHTML = window.chatModeStates[mode].html || '';
+        window.chatHistory = [...window.chatModeStates[mode].chatHistory];
+        window.userHistory = [...window.chatModeStates[mode].userHistory];
       }
-      
-      if (btnStart) {
-        btnStart.addEventListener('click', function(e) {
-          e.preventDefault();
-          var p = getQuizParams();
-          if (!p.prompt) return alert('Please enter a prompt to generate questions.');
-          if (!p.quizTitle) return alert('Please enter a Quiz Title.');
-          if (p.numMc === 0 && p.numQa === 0) return alert('Please enter at least one question (MC or Q&A).');
-          if (window.generateQuizFromChatbox) window.generateQuizFromChatbox(p, 'start');
-        });
+    }
+    
+    previousMode = mode;
+    if (modeSelector) modeSelector.value = mode;
+
+    var chatbotInput = document.querySelector('.chatbot-input');
+
+    if (mode === 'quiz') {
+      if (currentExamScreen === 'dashboard') {
+        if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
+        if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
+        if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
+      } else {
+        if (chatbotUI) chatbotUI.style.setProperty('display', 'none', 'important');
+        if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');
+        if (chatbotInput) chatbotInput.style.setProperty('display', 'none', 'important');
       }
+
+      if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
+      if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
       
-      if (btnUpload) {
-        btnUpload.addEventListener('click', function(e) {
-          e.preventDefault();
-          document.dispatchEvent(new CustomEvent('exam:go-upload'));
-        });
+      if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'none';
+      if (document.getElementById('sidebar-mode-selector')) document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
+      if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'flex';
+      if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'flex';
+      if (folderInputs) folderInputs.style.display = 'none';
+    } else {
+      if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
+      if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
+      if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
+      
+      if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'inline-block';
+      if (document.getElementById('sidebar-mode-selector')) document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
+      if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'none';
+      if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'none';
+      if (folderInputs) folderInputs.style.display = mode === 'bulkrun' ? 'flex' : 'none';
+
+      if (mode === 'llm') {
+        if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
+        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
+      } else if (mode === 'bulkrun') {
+        if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
+        // KEEP drive status visible so Google Drive authentication functions properly!
+        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important'); 
+      } else {
+        if (ragModelSection) ragModelSection.style.setProperty('display', 'flex', 'important');
+        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important');
       }
+    }
+  }
+
+  function clickMappedButton(map, selector) {
+    var provider = selector ? selector.value : 'dropbox';
+    var target = map[provider];
+    if (target) target.click();
+  }
+
+  if (unifiedInputButton) {
+    unifiedInputButton.addEventListener('click', function() {
+      clickMappedButton(inputButtonMap, inputProviderSelector);
     });
+  }
+
+  if (unifiedOutputButton) {
+    unifiedOutputButton.addEventListener('click', function() {
+      clickMappedButton(outputButtonMap, outputProviderSelector);
+    });
+  }
+
+  if (settingsNavButton) {
+    settingsNavButton.addEventListener('click', function() {
+      window.open('/pages/settings-v15', '_blank', 'noopener,noreferrer');
+    });
+  }
+
+  function bindSelectedFolderVisibility(elementId) {
+    var element = document.getElementById(elementId);
+    if (!element) return;
+
+    function syncVisibility() {
+      var hasValue = (element.textContent || '').trim().length > 0;
+      element.style.display = hasValue ? '' : 'none';
+    }
+
+    syncVisibility();
+    var observer = new MutationObserver(syncVisibility);
+    observer.observe(element, { childList: true, subtree: true, characterData: true });
+  }
+
+  bindSelectedFolderVisibility('selected-input-folder');
+  bindSelectedFolderVisibility('selected-output-folder');
+
+  document.addEventListener('exam:state-changed', function(e) {
+    if (e.detail && e.detail.screen) {
+      currentExamScreen = e.detail.screen;
+      if (modeSelector && modeSelector.value === 'quiz') {
+        updateModeDisplay('quiz');
+      }
+    }
+  });
+
+  if (modeSelector && chatbotUI && quizUI) {
+    updateModeDisplay(modeSelector.value);
+    modeSelector.addEventListener('change', function(e) {
+      updateModeDisplay(e.target.value);
+    });
+  }
+});
 </script>
 </body>
 </html>
