@@ -339,52 +339,5 @@
   </div><!-- close #rag-app -->
 
   <input type="file" id="file-input" multiple hidden>
-
-  <!-- Dynamic Shopify Parameter & Mode Logic -->
-  <script>
-  // 6. Interface Mode Switching
-  var modeSelector = document.getElementById('sidebar-mode-selector');
-  var chatbotUI = document.getElementById('chatbot-main-ui');
-  var quizUI = document.getElementById('quiz-main-ui');
-  var ragModelSection = document.getElementById('rag-model-section');
-  var ragDriveStatus = document.getElementById('rag-drive-status');
-  var folderInputs = document.getElementById('folder-inputs');
-
-  function updateModeDisplay(mode) {
-    var chatbotInput = document.querySelector('.chatbot-input');
-
-    if (mode === 'quiz') {
-      if (chatbotUI) chatbotUI.style.setProperty('display', 'none', 'important');
-      if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');
-      if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-      if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
-      if (folderInputs) folderInputs.style.display = 'none';
-    } else {
-      if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
-      if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
-      if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
-      if (folderInputs) folderInputs.style.display = mode === 'bulkrun' ? 'flex' : 'none';
-
-      if (mode === 'llm') {
-        if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
-      } else if (mode === 'bulkrun') {
-        if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important'); 
-      } else {
-        if (ragModelSection) ragModelSection.style.setProperty('display', 'flex', 'important');
-        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important');
-      }
-    }
-  }
-
-  if (modeSelector) {
-    updateModeDisplay(modeSelector.value);
-    modeSelector.addEventListener('change', function(e) {
-      updateModeDisplay(e.target.value);
-    });
-  }
-
-</script>
 </body>
 </html>
