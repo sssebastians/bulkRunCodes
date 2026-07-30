@@ -472,7 +472,6 @@
         }
     }
     
-    // Function to handle chat response and deduction
     async function getChatResponse(query, msgId, creditAccount) {
         console.log('current bot:', currentBot);
         console.log('bot URL:', currentBot.managerUrl);
@@ -507,71 +506,97 @@
                 formData.append('pageName', storeId);
                 formData.append('dataEntryFlag', currentBot["Data Entry"]);
                 formData.append('modelId', currentBot["endpoint-id"]);
-    
-                attachedFiles.forEach((file) => {
-                    formData.append('files', file);
-                });
-    
-                response = await fetch(currentBot.managerUrl, {
-                    method: 'POST',
-                    headers: { 'x-api-key': langya_secret_key },
-                    body: formData,
-                });
-            } else {
-                response = await fetch(currentBot.managerUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
-                    body: JSON.stringify({
-                        user_query: query,
-                        chat_history: limitedHistory,
-                        user_history: limitedUserHistory,
-                        msgId,
-                        userId: CUSTOMER_ID,
-                        roomId: currentRoomId,
-                        amount: amount,
-                        beforeBalance: creditAccount.balance.amount,
-                        customer_ip_address: ipAddress,
-                        input_folder: selectedFolderId,
-                        output_folder: outputFolderValue || selectedFolderId,
-                        storageNo: mapper[sourceMode] || 1,
-                        asyncMode: asyncMode,
-                        email: email,
-                        pageName: storeId,
-                        dataEntryFlag: currentBot["Data Entry"] || 0,
-                        modelId: currentBot["endpoint-id"]
-                    }),
-                });
-            }
-    
-            if (!response.ok) throw new Error(await response.text());
-            const data = await response.json();
-            attachedFiles = [];
-            attachBtn.textContent = '+';
-            fileInput.value = '';
-            selectedFileName.textContent = '';
-    
-            const provider_cost = data?.provider_cost;
-            const generation_id = data?.generation_id;
-            const calculatedCost = data?.calculatedCost;
-    
-            // Token update
-            if (data.answer != 'Sorry, an error occurred. Please try again.') {
-                await updateTokens(msgId, data.inputTokens, data.outputTokens, creditAccount.balance.currencyCode, calculatedCost);
-            }
-    
-            console.log(data);
-            return data.answer;
-        } catch (error) {
-            console.error('Error getting chat response:', error);
-            return 'Sorry, an error occurred. Please try again.';
+
+            attachedFiles.forEach((file) => {
+                formData.append('files', file);
+            });
+
+            response = await fetch(currentBot.managerUrl, {
+                method: 'POST',
+                headers: { 'x-api-key': langya_secret_key },
+                body: formData,
+            });
+        } else {
+            response = await fetch(currentBot.managerUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+                body: JSON.stringify({
+                    user_query: query,
+                    chat_history: limitedHistory,
+                    user_history: limitedUserHistory,
+                    msgId,
+                    userId: CUSTOMER_ID,
+                    roomId: currentRoomId,
+                    amount: amount,
+                    beforeBalance: creditAccount.balance.amount,
+                    customer_ip_address: ipAddress,
+                    input_folder: selectedFolderId,
+                    output_folder: outputFolderValue || selectedFolderId,
+                    storageNo: mapper[sourceMode] || 1,
+                    asyncMode: asyncMode,
+                    email: email,
+                    pageName: storeId,
+                    dataEntryFlag: currentBot["Data Entry"] || 0,
+                    modelId: currentBot["endpoint-id"]
+                }),
+            });
         }
+
+        if (!response.ok) throw new Error(await response.text());
+        const data = await response.json();
+        attachedFiles = [];
+        attachBtn.textContent = '+';
+        fileInput.value = '';
+        selectedFileName.textContent = '';
+
+        const provider_cost = data?.provider_cost;
+        const generation_id = data?.generation_id;
+        const calculatedCost = data?.calculatedCost;
+
+        if (data.answer != 'Sorry, an error occurred. Please try again.') {
+            await updateTokens(msgId, data.inputTokens, data.outputTokens, creditAccount.balance.currencyCode, calculatedCost);
+        }
+
+        console.log(data);
+        return data.answer;
+    } catch (error) {
+        console.error('Error getting chat response:', error);
+        return 'Sorry, an error occurred. Please try again.';
     }
-    
-    function checkBotData() {
-        if (currentBot.cost == null || currentBot.cost <= 0 || currentBot.currency == null) return "error";
-    }
-    
-    async function getCategoriesList() {
+}
+
+function checkBotData() {
+    if (currentBot.cost == null || currentBot.cost <= 0 || currentBot.currency == null) return "error";
+}
+
+async function getCategoriesList() {
+    const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+        body: JSON.stringify({ collectionName: 'pageMaster' })
+    });
+    const dat_pages = await resp_pages.json();
+    const pageMasterData = dat_pages.results;
+    const siteData = pageMasterData.filter((data) => data.id == storeId)[0];
+
+    const resp_cat = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+        body: JSON.stringify({ collectionName: 'pageList' })
+    });
+    const dat_cat = await resp_cat.json();
+    const categoriesList = dat_cat.results;
+
+    categoriesList.forEach((category) => {
+        const name = category['page-list'];
+        if (siteData[name] == 1) {
+            botsCategories.push(category);
+        }
+    });
+}
+
+async function getBotsData() {
+    try {
         const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
@@ -579,82 +604,71 @@
         });
         const dat_pages = await resp_pages.json();
         const pageMasterData = dat_pages.results;
-        const siteData = pageMasterData.filter((data) => data.id == storeId)[0];
-    
-        const resp_cat = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
+        const tableName = pageMasterData.filter(data => data.id == storeId)[0]['endpoint-table-name'];
+        DataEntry = pageMasterData.filter(data => data.id == storeId)[0]['Data Entry'];
+        console.log(pageMasterData);
+
+        const resp_tab = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
-            body: JSON.stringify({ collectionName: 'pageList' })
+            body: JSON.stringify({ collectionName: tableName })
         });
-        const dat_cat = await resp_cat.json();
-        const categoriesList = dat_cat.results;
-    
-        categoriesList.forEach((category) => {
-            const name = category['page-list'];
-            if (siteData[name] == 1) {
-                botsCategories.push(category);
+        const dat_tab = await resp_tab.json();
+        const results = dat_tab.results;
+        console.log(JSON.stringify(results));
+        botsList = [];
+
+        results.forEach(doc => {
+            if (doc.Showing === 1) {
+                doc.id = doc.id;
+                doc.model = doc.Model;
+                doc.name = doc.id;
+                doc.cost = doc["AI Credit"] || 1;
+                doc.url = doc.url || '';
+                doc.developer = doc.Developer;
+                doc.inputTokenPrice = doc["Input Token Price Per Mil"];
+                doc.outputTokenPrice = doc["Output Token Price Per Mil"];
+                doc.currency = doc["Currency"];
+                botsList.push(doc);
             }
         });
+
+        console.log(JSON.stringify(botsList));
+        populateBotSelector();
+        return botsList;
+    } catch (error) {
+        console.error(error);
     }
-    
-    async function getBotsData() {
-        try {
-            const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
-                body: JSON.stringify({ collectionName: 'pageMaster' })
-            });
-            const dat_pages = await resp_pages.json();
-            const pageMasterData = dat_pages.results;
-            const tableName = pageMasterData.filter(data => data.id == storeId)[0]['endpoint-table-name'];
-            DataEntry = pageMasterData.filter(data => data.id == storeId)[0]['Data Entry'];
-            console.log(pageMasterData);
-    
-            const resp_tab = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
-                body: JSON.stringify({ collectionName: tableName })
-            });
-            const dat_tab = await resp_tab.json();
-            const results = dat_tab.results;
-            console.log(JSON.stringify(results));
-            botsList = []; // Reset the list
-    
-            results.forEach(doc => {
-                if (doc.Showing === 1) {
-                    doc.id = doc.id;
-                    doc.model = doc.Model;
-                    doc.name = doc.id;
-                    doc.cost = doc["AI Credit"] || 1;
-                    doc.url = doc.url || '';
-                    doc.developer = doc.Developer;
-                    doc.inputTokenPrice = doc["Input Token Price Per Mil"];
-                    doc.outputTokenPrice = doc["Output Token Price Per Mil"];
-                    doc.currency = doc["Currency"];
-                    botsList.push(doc);
-                }
-            });
-    
-            console.log(JSON.stringify(botsList));
-            populateBotSelector();
-            return botsList;
-        } catch (error) {
-            console.error(error);
-        }
+}
+
+async function fetchCurrencies() {
+    const resp_rate = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+        body: JSON.stringify({ collectionName: 'fxRate' })
+    });
+    const dat_rate = await resp_rate.json();
+    const fxRates = dat_rate.results;
+    fxRates.forEach(exchange => {
+        currencies[exchange['quote-currency']] = exchange['Rate'];
+    });
+}
+
+// ------------------------------------------------------------------
+// 2. AUTOMATIC EXECUTION ON LOAD
+// ------------------------------------------------------------------
+async function initApp() {
+    try {
+        await fetchCurrencies();
+        await getCategoriesList();
+        await getBotsData();
+        console.log("Application data loaded successfully.");
+    } catch (err) {
+        console.error("Initialization error:", err);
     }
-    
-    async function fetchCurrencies() {
-        const resp_rate = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
-            body: JSON.stringify({ collectionName: 'fxRate' })
-        });
-        const dat_rate = await resp_rate.json();
-        const fxRates = dat_rate.results;
-        fxRates.forEach(exchange => {
-            currencies[exchange['quote-currency']] = exchange['Rate'];
-        });
-    }
+}
+
+initApp();
       
       // 4. Interface Mode Switching Logic
       var modeSelector = document.getElementById('sidebar-mode-selector');
