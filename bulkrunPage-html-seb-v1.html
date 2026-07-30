@@ -378,7 +378,10 @@
     }
     
     window.CUSTOMER_ID = customerId;
-
+      
+      if (window.CUSTOMER_ID) {
+        fetchTokens();
+    }
       
       // 4. Interface Mode Switching Logic
       var modeSelector = document.getElementById('sidebar-mode-selector');
