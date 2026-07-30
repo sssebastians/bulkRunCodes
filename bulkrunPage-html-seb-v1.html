@@ -343,6 +343,11 @@
   <!-- Dynamic Shopify Parameter & Mode Logic -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      var customerEl = document.getElementById('shopify-customer');
+      if (customerEl) {
+          customerEl.setAttribute('data-customer-id', customerId);
+      }
+      CUSTOMER_ID = customerEl?.getAttribute('data-customer-id') || null;
       // 1. Read parameters passed via Shopify iframe URL
       var urlParams = new URLSearchParams(window.location.search);
       var customerId = urlParams.get('customer_id');
