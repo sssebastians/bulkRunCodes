@@ -382,7 +382,7 @@
       if (window.CUSTOMER_ID) {
         // 1. Define base token endpoint URL
        var targetUrl = "https://flashcard-gen-40834982812.us-central1.run.app/get-tokens/" + window.CUSTOMER_ID;
-      var proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+        var proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl);
       
       fetch(proxyUrl)
         .then(function(res) {
