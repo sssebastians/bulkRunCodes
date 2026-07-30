@@ -343,16 +343,33 @@
   <!-- Dynamic Shopify Parameter & Mode Logic -->
   <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Base URL configuration for token management
+  // Base configuration
   const baseUrl_tokens = 'https://us-central1-project-mb-bend.cloudfunctions.net/node_tokens_v29_AIB_TEST2';
   
+  // Safe global fallback declarations to prevent ReferenceErrors
+  window.langya_secret_key = window.langya_secret_key || '';
+  window.storeId = window.storeId || 'defaultStore';
+  window.currencies = window.currencies || {};
+  window.botsCategories = window.botsCategories || [];
+  window.botsList = window.botsList || [];
+  window.chatHistory = window.chatHistory || [];
+  window.userHistory = window.userHistory || [];
+  window.attachedFiles = window.attachedFiles || [];
+  window.currentBot = window.currentBot || { name: 'DefaultBot', cost: 1, currency: 'USD', managerUrl: '' };
+  window.currentCreditAccount = window.currentCreditAccount || { balance: { amount: 0, currencyCode: 'USD' } };
+  window.currentRoomId = window.currentRoomId || 'general';
+  window.email = window.email || '';
+  window.sourceMode = window.sourceMode || '1';
+  window.mapper = window.mapper || {};
+  window.asyncMode = window.asyncMode || false;
+
   // 1. Read parameters passed via Shopify iframe URL
   var urlParams = new URLSearchParams(window.location.search);
   var customerId = urlParams.get('customer_id');
   var customerEmail = urlParams.get('customer_email');
   var shopDomain = urlParams.get('shop');
   
-  // 2. Auth Fallback: If no customer ID in iframe URL, show login screen
+  // 2. Auth Fallback
   if (!customerId) {
     document.body.innerHTML = `
       <div style="text-align: center; padding: 100px 20px; font-family: sans-serif;">
@@ -365,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // 3. Inject attributes dynamically into elements
+  // 3. Inject attributes
   var ragApp = document.getElementById('rag-app');
   if (ragApp) {
     ragApp.setAttribute('data-customer-id', customerId);
@@ -380,41 +397,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
   window.CUSTOMER_ID = customerId;
   
-  // Fetch and display tokens inside <span id="customer-tokens"></span>
-  async function getAICredits(customerId) {
-    const tokensSpan = document.getElementById('customer-tokens');
+  // Safe IP address helper
+  async function fetchIPAddress() {
+    if (typeof window.getIPadress === 'function') {
+      try { return await window.getIPadress(); } catch (e) { console.warn(e); }
+    }
+    if (typeof window.getIPAddress === 'function') {
+      try { return await window.getIPAddress(); } catch (e) { console.warn(e); }
+    }
+    return '127.0.0.1';
+  }
 
-    if (!customerId) {
-      console.warn("No customer ID provided.");
+  // Fetch AI credits
+  async function getAICredits(cId) {
+    const tokensSpan = document.getElementById('customer-tokens');
+    if (!cId) {
       if (tokensSpan) tokensSpan.textContent = "0";
       return 0;
     }
 
-    const targetUrl = `${baseUrl_tokens}/get-tokens/${customerId}`;
-
     try {
-      const response = await fetch(targetUrl, {
+      const response = await fetch(`${baseUrl_tokens}/get-tokens/${cId}`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
   
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-      
       const data = await response.json();
   
-      if (!data || !data.creditAccounts || Object.keys(data.creditAccounts).length === 0) {
+      if (!data || !data.creditAccounts) {
         if (tokensSpan) tokensSpan.textContent = "0";
         return 0;
       }
   
       window.creditAccounts = data.creditAccounts;
-      const currentCreditAccount = window.creditAccounts[0];
-      const balance = currentCreditAccount?.balance?.amount ?? "0";
+      window.currentCreditAccount = window.creditAccounts[0] || window.currentCreditAccount;
+      const balance = window.currentCreditAccount?.balance?.amount ?? "0";
   
-      if (tokensSpan) {
-        tokensSpan.textContent = balance;
-      }
-  
+      if (tokensSpan) tokensSpan.textContent = balance;
       return balance;
     } catch (err) {
       console.error('Error fetching AI credits:', err);
@@ -424,173 +444,136 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   async function updateTokens(messageId, inputTokens, outputTokens, currencyChosen, calculatedCostFromBot) {
-    const cost = calculateTokenConsumption(inputTokens, outputTokens, currencyChosen, calculatedCostFromBot);
-    const account = creditAccounts.filter(acc => acc.balance.currencyCode == currencyChosen)[0];
-    let updatedValue = account.balance.amount - cost;
-    let botUsed = currentBot.name;
-    let amount = cost;
+    const cost = typeof calculateTokenConsumption === 'function' 
+      ? calculateTokenConsumption(inputTokens, outputTokens, currencyChosen, calculatedCostFromBot)
+      : (calculatedCostFromBot || 1);
+      
+    const account = (window.creditAccounts || []).find(acc => acc.balance.currencyCode == currencyChosen) || window.currentCreditAccount;
+    let updatedValue = (account?.balance?.amount || 0) - cost;
 
     try {
         const response = await fetch(`${baseUrl_tokens}/update-tokens`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                customerId: CUSTOMER_ID, 
+                customerId: window.CUSTOMER_ID, 
                 tokenValue: updatedValue, 
                 messageId: messageId, 
-                botUsed: botUsed, 
-                previousAmount: currentCreditAccount.balance.amount, 
-                amount: amount, 
+                botUsed: window.currentBot.name, 
+                previousAmount: window.currentCreditAccount.balance.amount, 
+                amount: cost, 
                 currency: currencyChosen 
             }),
         });
 
-        if (!response.ok) {
-            console.error('Failed to update tokens on backend');
-            return currentCreditAccount.balance.amount;
-        }
+        if (!response.ok) return window.currentCreditAccount.balance.amount;
 
-        getAICredits(CUSTOMER_ID);
+        getAICredits(window.CUSTOMER_ID);
         return updatedValue;
     } catch (error) {
         console.error('Error updating tokens:', error);
-        if (typeof sendLogToBackend === 'function') {
-            sendLogToBackend(`Error updating tokens: ${error}`);
-        }
-        return currentCreditAccount.balance.amount;
+        return window.currentCreditAccount.balance.amount;
     }
   }
 
   async function getChatResponse(query, msgId, creditAccount) {
-    console.log('current bot:', currentBot);
-    console.log('bot URL:', currentBot.managerUrl);
-    console.log('async mode:', asyncMode);
-
-    // Safely reference DOM Elements
     const inputFolderEl = document.getElementById('input-folder');
     const outputFolderEl = document.getElementById('output-folder');
+    const attachBtn = document.getElementById('attach-button');
+    const fileInput = document.getElementById('file-input');
+    const selectedFileName = document.getElementById('selected-file-name');
 
     let inputFolderValue = inputFolderEl ? inputFolderEl.value.trim() : '';
     let outputFolderValue = outputFolderEl ? outputFolderEl.value.trim() : '';
-    
-    // Fallback to manually entered ID if window.selectedFolderId is empty
     let effectiveInputFolder = window.selectedFolderId || inputFolderValue || null;
     let effectiveOutputFolder = outputFolderValue || effectiveInputFolder;
 
     try {
-        const ipAddress = await getIPadress();
-        console.log(`ipAddress: ${ipAddress}`);
+        const ipAddress = await fetchIPAddress();
 
-        limitedHistory = chatHistory.slice(-10);
-        limitedUserHistory = userHistory.slice(-11, -1);
-        let amount = currentBot.cost;
+        const limitedHistory = (window.chatHistory || []).slice(-10);
+        const limitedUserHistory = (window.userHistory || []).slice(-11, -1);
+        let amount = window.currentBot.cost || 1;
         let response;
+        const secretKey = window.langya_secret_key || '';
 
-        if (attachedFiles.length > 0) {
+        if (!window.currentBot.managerUrl) {
+            throw new Error("No bot managerUrl provided.");
+        }
+
+        if (window.attachedFiles && window.attachedFiles.length > 0) {
             const formData = new FormData();
             formData.append('user_query', query);
             formData.append('chat_history', JSON.stringify(limitedHistory));
             formData.append('user_history', JSON.stringify(limitedUserHistory));
             formData.append('msgId', msgId);
-            formData.append('userId', CUSTOMER_ID);
-            formData.append('roomId', currentRoomId);
+            formData.append('userId', window.CUSTOMER_ID);
+            formData.append('roomId', window.currentRoomId);
             formData.append('amount', amount);
             formData.append('beforeBalance', creditAccount.balance.amount);
             formData.append('customer_ip_address', ipAddress);
             formData.append('input_folder', effectiveInputFolder);
             formData.append('output_folder', effectiveOutputFolder);
-            formData.append('storageNo', mapper[sourceMode] || 1);
-            formData.append('asyncMode', asyncMode);
-            formData.append('email', email);
-            formData.append('pageName', storeId);
-            formData.append('dataEntryFlag', currentBot["Data Entry"]);
-            formData.append('modelId', currentBot["endpoint-id"]);
+            formData.append('storageNo', window.mapper[window.sourceMode] || 1);
+            formData.append('asyncMode', window.asyncMode);
+            formData.append('email', window.email);
+            formData.append('pageName', window.storeId);
+            formData.append('dataEntryFlag', window.currentBot["Data Entry"] || 0);
+            formData.append('modelId', window.currentBot["endpoint-id"] || '');
 
-            attachedFiles.forEach((file) => {
-                formData.append('files', file);
-            });
+            window.attachedFiles.forEach((file) => formData.append('files', file));
 
-            response = await fetch(currentBot.managerUrl, {
+            response = await fetch(window.currentBot.managerUrl, {
                 method: 'POST',
-                headers: { 'x-api-key': langya_secret_key },
+                headers: { 'x-api-key': secretKey },
                 body: formData,
             });
         } else {
-            response = await fetch(currentBot.managerUrl, {
+            response = await fetch(window.currentBot.managerUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-api-key': langya_secret_key },
+                headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
                 body: JSON.stringify({
                     user_query: query,
                     chat_history: limitedHistory,
                     user_history: limitedUserHistory,
                     msgId,
-                    userId: CUSTOMER_ID,
-                    roomId: currentRoomId,
+                    userId: window.CUSTOMER_ID,
+                    roomId: window.currentRoomId,
                     amount: amount,
                     beforeBalance: creditAccount.balance.amount,
                     customer_ip_address: ipAddress,
                     input_folder: effectiveInputFolder,
                     output_folder: effectiveOutputFolder,
-                    storageNo: mapper[sourceMode] || 1,
-                    asyncMode: asyncMode,
-                    email: email,
-                    pageName: storeId,
-                    dataEntryFlag: currentBot["Data Entry"] || 0,
-                    modelId: currentBot["endpoint-id"]
+                    storageNo: window.mapper[window.sourceMode] || 1,
+                    asyncMode: window.asyncMode,
+                    email: window.email,
+                    pageName: window.storeId,
+                    dataEntryFlag: window.currentBot["Data Entry"] || 0,
+                    modelId: window.currentBot["endpoint-id"] || ''
                 }),
             });
         }
 
         if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
-        attachedFiles = [];
+        
+        window.attachedFiles = [];
         if (attachBtn) attachBtn.textContent = '+';
         if (fileInput) fileInput.value = '';
         if (selectedFileName) selectedFileName.textContent = '';
 
-        const calculatedCost = data?.calculatedCost;
-
-        if (data.answer != 'Sorry, an error occurred. Please try again.') {
-            await updateTokens(msgId, data.inputTokens, data.outputTokens, creditAccount.balance.currencyCode, calculatedCost);
+        if (data.answer && data.answer !== 'Sorry, an error occurred. Please try again.') {
+            await updateTokens(msgId, data.inputTokens, data.outputTokens, creditAccount.balance.currencyCode, data.calculatedCost);
         }
 
-        return data.answer;
+        return data.answer || 'No response from assistant.';
     } catch (error) {
         console.error('Error getting chat response:', error);
-        return 'Sorry, an error occurred. Please try again.';
+        return 'Sorry, an error occurred while connecting to the assistant.';
     }
   }
 
-async function getCategoriesList() {
-    const secretKey = window.langya_secret_key || '';
-    const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
-        body: JSON.stringify({ collectionName: 'pageMaster' })
-    });
-    const dat_pages = await resp_pages.json();
-    const pageMasterData = dat_pages.results || [];
-    const siteData = pageMasterData.find((data) => data.id == storeId);
-
-    if (!siteData) return;
-
-    const resp_cat = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
-        body: JSON.stringify({ collectionName: 'pageList' })
-    });
-    const dat_cat = await resp_cat.json();
-    const categoriesList = dat_cat.results || [];
-
-    categoriesList.forEach((category) => {
-        const name = category['page-list'];
-        if (siteData[name] == 1) {
-            botsCategories.push(category);
-        }
-    });
-}
-
-async function getBotsData() {
+  async function getCategoriesList() {
     try {
         const secretKey = window.langya_secret_key || '';
         const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
@@ -600,12 +583,42 @@ async function getBotsData() {
         });
         const dat_pages = await resp_pages.json();
         const pageMasterData = dat_pages.results || [];
-        const matchedPage = pageMasterData.find(data => data.id == storeId);
+        const siteData = pageMasterData.find((data) => data.id == window.storeId);
+
+        if (!siteData) return;
+
+        const resp_cat = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
+            body: JSON.stringify({ collectionName: 'pageList' })
+        });
+        const dat_cat = await resp_cat.json();
+        const categoriesList = dat_cat.results || [];
+
+        categoriesList.forEach((category) => {
+            if (siteData[category['page-list']] == 1) {
+                window.botsCategories.push(category);
+            }
+        });
+    } catch(e) { console.error(e); }
+  }
+
+  async function getBotsData() {
+    try {
+        const secretKey = window.langya_secret_key || '';
+        const resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': secretKey },
+            body: JSON.stringify({ collectionName: 'pageMaster' })
+        });
+        const dat_pages = await resp_pages.json();
+        const pageMasterData = dat_pages.results || [];
+        const matchedPage = pageMasterData.find(data => data.id == window.storeId);
 
         if (!matchedPage) return [];
 
         const tableName = matchedPage['endpoint-table-name'];
-        DataEntry = matchedPage['Data Entry'];
+        window.DataEntry = matchedPage['Data Entry'];
 
         const resp_tab = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
             method: 'POST',
@@ -614,7 +627,7 @@ async function getBotsData() {
         });
         const dat_tab = await resp_tab.json();
         const results = dat_tab.results || [];
-        botsList = [];
+        window.botsList = [];
 
         results.forEach(doc => {
             if (doc.Showing === 1) {
@@ -627,18 +640,18 @@ async function getBotsData() {
                 doc.inputTokenPrice = doc["Input Token Price Per Mil"];
                 doc.outputTokenPrice = doc["Output Token Price Per Mil"];
                 doc.currency = doc["Currency"];
-                botsList.push(doc);
+                window.botsList.push(doc);
             }
         });
 
         if (typeof populateBotSelector === 'function') populateBotSelector();
-        return botsList;
+        return window.botsList;
     } catch (error) {
         console.error('Error in getBotsData:', error);
     }
-}
+  }
 
-async function fetchCurrencies() {
+  async function fetchCurrencies() {
     try {
         const secretKey = window.langya_secret_key || '';
         const resp_rate = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
@@ -649,12 +662,12 @@ async function fetchCurrencies() {
         const dat_rate = await resp_rate.json();
         const fxRates = dat_rate.results || [];
         fxRates.forEach(exchange => {
-            currencies[exchange['quote-currency']] = exchange['Rate'];
+            window.currencies[exchange['quote-currency']] = exchange['Rate'];
         });
     } catch (error) {
         console.error('Error in fetchCurrencies:', error);
     }
-}
+  }
 
   async function initApp() {
     try {
@@ -670,94 +683,86 @@ async function fetchCurrencies() {
 
   initApp();
 
-  // 4. Interface Mode Switching Logic
+  // ------------------------------------------------------------------
+  // 5. MESSAGE SEND & EVENT LISTENER LOGIC
+  // ------------------------------------------------------------------
+  const sendBtn = document.getElementById('send-button');
+  const inputField = document.getElementById('chatbot-input-field');
+  const messagesDiv = document.querySelector('.chatbot-messages');
+
+  async function handleSendMessage() {
+    if (!inputField) return;
+    const userQuery = inputField.value.trim();
+    if (!userQuery) return;
+
+    inputField.value = '';
+
+    // Append User Message to UI
+    if (messagesDiv) {
+        messagesDiv.innerHTML += `
+            <div class="chat-message user-message" style="margin-bottom: 12px; text-align: right;">
+                <div style="display: inline-block; background: #007bff; color: #fff; padding: 8px 12px; border-radius: 8px;">
+                    ${userQuery}
+                </div>
+            </div>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    const msgId = 'msg_' + Date.now();
+    const account = window.currentCreditAccount || { balance: { amount: 0, currencyCode: 'USD' } };
+
+    // Fetch Assistant Response
+    const botReply = await getChatResponse(userQuery, msgId, account);
+
+    // Append Assistant Response to UI
+    if (messagesDiv) {
+        messagesDiv.innerHTML += `
+            <div class="chat-message bot-message" style="margin-bottom: 12px; text-align: left;">
+                <div style="display: inline-block; background: #f1f3f5; color: #333; padding: 8px 12px; border-radius: 8px;">
+                    ${botReply}
+                </div>
+            </div>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  }
+
+  if (sendBtn) {
+    sendBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      handleSendMessage();
+    });
+  }
+
+  if (inputField) {
+    inputField.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+    });
+  }
+
+  // 6. Interface Mode Switching
   var modeSelector = document.getElementById('sidebar-mode-selector');
   var chatbotUI = document.getElementById('chatbot-main-ui');
   var quizUI = document.getElementById('quiz-main-ui');
   var ragModelSection = document.getElementById('rag-model-section');
   var ragDriveStatus = document.getElementById('rag-drive-status');
   var folderInputs = document.getElementById('folder-inputs');
-  var settingsNavButton = document.getElementById('settings-nav-btn');
-  var inputProviderSelector = document.getElementById('input-provider-selector');
-  var outputProviderSelector = document.getElementById('output-provider-selector');
-  var unifiedInputButton = document.getElementById('choose-input-folder');
-  var unifiedOutputButton = document.getElementById('choose-output-folder');
-
-  var inputButtonMap = {
-    dropbox: document.getElementById('choose-folder'),
-    gdrive: document.getElementById('choose-gdrive'),
-    onedrive: document.getElementById('choose-od-input')
-  };
-
-  var outputButtonMap = {
-    dropbox: document.getElementById('choose-db-output'),
-    gdrive: document.getElementById('choose-output'),
-    onedrive: document.getElementById('choose-od-output')
-  };
-
-  window.chatModeStates = {
-    rag: { html: '', chatHistory: [], userHistory: [] },
-    llm: { html: '', chatHistory: [], userHistory: [] },
-    quiz: { html: '', chatHistory: [], userHistory: [] },
-    bulkrun: { html: '', chatHistory: [], userHistory: [] }
-  };
-  var previousMode = modeSelector ? modeSelector.value : 'rag';
-  var currentExamScreen = window.ExamApp && window.ExamApp.state ? window.ExamApp.state.screen : 'dashboard';
 
   function updateModeDisplay(mode) {
-    if (previousMode !== mode) {
-      var msgDiv = document.querySelector('.chatbot-messages');
-      if (msgDiv && window.chatModeStates[previousMode]) {
-        window.chatModeStates[previousMode] = {
-          html: msgDiv.innerHTML,
-          chatHistory: typeof window.chatHistory !== 'undefined' ? [...window.chatHistory] : [],
-          userHistory: typeof window.userHistory !== 'undefined' ? [...window.userHistory] : []
-        };
-      }
-    }
-
-    if (previousMode !== mode) {
-      var msgDiv = document.querySelector('.chatbot-messages');
-      if (msgDiv && window.chatModeStates[mode]) {
-        msgDiv.innerHTML = window.chatModeStates[mode].html || '';
-        window.chatHistory = [...window.chatModeStates[mode].chatHistory];
-        window.userHistory = [...window.chatModeStates[mode].userHistory];
-      }
-    }
-    
-    previousMode = mode;
-    if (modeSelector) modeSelector.value = mode;
-
     var chatbotInput = document.querySelector('.chatbot-input');
 
     if (mode === 'quiz') {
-      if (currentExamScreen === 'dashboard') {
-        if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
-        if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
-        if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
-      } else {
-        if (chatbotUI) chatbotUI.style.setProperty('display', 'none', 'important');
-        if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');
-        if (chatbotInput) chatbotInput.style.setProperty('display', 'none', 'important');
-      }
-
+      if (chatbotUI) chatbotUI.style.setProperty('display', 'none', 'important');
+      if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');
       if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
       if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
-      
-      if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'none';
-      if (document.getElementById('sidebar-mode-selector')) document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
-      if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'flex';
-      if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'flex';
       if (folderInputs) folderInputs.style.display = 'none';
     } else {
       if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
       if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
       if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
-      
-      if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'inline-block';
-      if (document.getElementById('sidebar-mode-selector')) document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
-      if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'none';
-      if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'none';
       if (folderInputs) folderInputs.style.display = mode === 'bulkrun' ? 'flex' : 'none';
 
       if (mode === 'llm') {
@@ -765,7 +770,6 @@ async function fetchCurrencies() {
         if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
       } else if (mode === 'bulkrun') {
         if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-        // KEEP drive status visible so Google Drive authentication functions properly!
         if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important'); 
       } else {
         if (ragModelSection) ragModelSection.style.setProperty('display', 'flex', 'important');
@@ -774,57 +778,7 @@ async function fetchCurrencies() {
     }
   }
 
-  function clickMappedButton(map, selector) {
-    var provider = selector ? selector.value : 'dropbox';
-    var target = map[provider];
-    if (target) target.click();
-  }
-
-  if (unifiedInputButton) {
-    unifiedInputButton.addEventListener('click', function() {
-      clickMappedButton(inputButtonMap, inputProviderSelector);
-    });
-  }
-
-  if (unifiedOutputButton) {
-    unifiedOutputButton.addEventListener('click', function() {
-      clickMappedButton(outputButtonMap, outputProviderSelector);
-    });
-  }
-
-  if (settingsNavButton) {
-    settingsNavButton.addEventListener('click', function() {
-      window.open('/pages/settings-v15', '_blank', 'noopener,noreferrer');
-    });
-  }
-
-  function bindSelectedFolderVisibility(elementId) {
-    var element = document.getElementById(elementId);
-    if (!element) return;
-
-    function syncVisibility() {
-      var hasValue = (element.textContent || '').trim().length > 0;
-      element.style.display = hasValue ? '' : 'none';
-    }
-
-    syncVisibility();
-    var observer = new MutationObserver(syncVisibility);
-    observer.observe(element, { childList: true, subtree: true, characterData: true });
-  }
-
-  bindSelectedFolderVisibility('selected-input-folder');
-  bindSelectedFolderVisibility('selected-output-folder');
-
-  document.addEventListener('exam:state-changed', function(e) {
-    if (e.detail && e.detail.screen) {
-      currentExamScreen = e.detail.screen;
-      if (modeSelector && modeSelector.value === 'quiz') {
-        updateModeDisplay('quiz');
-      }
-    }
-  });
-
-  if (modeSelector && chatbotUI && quizUI) {
+  if (modeSelector) {
     updateModeDisplay(modeSelector.value);
     modeSelector.addEventListener('change', function(e) {
       updateModeDisplay(e.target.value);
