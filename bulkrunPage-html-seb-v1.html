@@ -343,14 +343,15 @@
   <!-- Dynamic Shopify Parameter & Mode Logic -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Base URL configuration for token management
+      const baseUrl_tokens = 'https://us-central1-project-mb-bend.cloudfunctions.net/node_tokens_v29_AIB_TEST2';
+
       // 1. Read parameters passed via Shopify iframe URL
       var urlParams = new URLSearchParams(window.location.search);
       var customerId = urlParams.get('customer_id');
       var customerEmail = urlParams.get('customer_email');
       var shopDomain = urlParams.get('shop');
       
- 
-
       // 2. Auth Fallback: If no customer ID in iframe URL, show login screen
       if (!customerId) {
         document.body.innerHTML = `
@@ -379,52 +380,55 @@
     
       window.CUSTOMER_ID = customerId;
       
+      // Fetch and display tokens inside <span id="customer-tokens"></span>
       async function getAICredits(customerId) {
-  if (!customerId) {
-    console.warn("No customer ID provided.");
-    return 0;
-  }
+        const tokensSpan = document.getElementById('customer-tokens');
 
-  // Call Cloud Run endpoint directly without corsproxy.io
-  const targetUrl = `https://flashcard-gen-40834982812.us-central1.run.app/get-tokens/${customerId}`;
-    
-      try {
-        const response = await fetch(targetUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          }
-        });
-    
-        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-        
-        const data = await response.json();
-    
-        if (!data || !data.creditAccounts || data.creditAccounts.length === 0) {
-          const tokensSpan = document.getElementById('customer-tokens');
+        if (!customerId) {
+          console.warn("No customer ID provided.");
           if (tokensSpan) tokensSpan.textContent = "0";
           return 0;
         }
+
+        // Endpoint targeting your node_tokens_v29_AIB_TEST2 Cloud Function
+        const targetUrl = `${baseUrl_tokens}/get-tokens/${customerId}`;
     
-        const creditAccount = data.creditAccounts[0];
-        const balance = creditAccount?.balance?.amount || 0;
-    
-        // Update display span
-        const tokensSpan = document.getElementById('customer-tokens');
-        if (tokensSpan) {
-          tokensSpan.textContent = balance;
+        try {
+          const response = await fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            }
+          });
+      
+          if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+          
+          const data = await response.json();
+      
+          if (!data || !data.creditAccounts || Object.keys(data.creditAccounts).length === 0) {
+            if (tokensSpan) tokensSpan.textContent = "0";
+            return 0;
+          }
+      
+          // Global or modular storage fallback
+          window.creditAccounts = data.creditAccounts;
+          const currentCreditAccount = window.creditAccounts[0];
+          const balance = currentCreditAccount?.balance?.amount ?? "0";
+      
+          // Update display span
+          if (tokensSpan) {
+            tokensSpan.textContent = balance;
+          }
+      
+          return balance;
+        } catch (err) {
+          console.error('Error fetching AI credits:', err);
+          if (tokensSpan) tokensSpan.textContent = "0";
+          return 0;
         }
-    
-        return balance;
-      } catch (err) {
-        console.error('Error fetching AI credits:', err);
-        const tokensSpan = document.getElementById('customer-tokens');
-        if (tokensSpan) tokensSpan.textContent = "0";
-        return 0;
       }
-    }
             
-      // Call the function using your global CUSTOMER_ID:
+      // Call the function using window.CUSTOMER_ID:
       getAICredits(window.CUSTOMER_ID).then(balance => {
           console.log("Current AI Credits Balance:", balance);
       });
@@ -639,6 +643,6 @@
         });
       }
     });
-  </script>
+</script>
 </body>
 </html>
