@@ -380,7 +380,52 @@
       window.CUSTOMER_ID = customerId;
       
       // Fetch and display tokens inside <span id="customer-tokens"></span>
+      async function getAICredits(customerId) {
+        const tokensSpan = document.getElementById('customer-tokens');
+
+        if (!customerId) {
+          console.warn("No customer ID provided.");
+          if (tokensSpan) tokensSpan.textContent = "0";
+          return 0;
+        }
+
+        // Endpoint targeting your node_tokens_v29_AIB_TEST2 Cloud Function
+        const targetUrl = `${baseUrl_tokens}/get-tokens/${customerId}`;
+    
+        try {
+          const response = await fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            }
+          });
       
+          if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+          
+          const data = await response.json();
+      
+          if (!data || !data.creditAccounts || Object.keys(data.creditAccounts).length === 0) {
+            if (tokensSpan) tokensSpan.textContent = "0";
+            return 0;
+          }
+      
+          // Global or modular storage fallback
+          window.creditAccounts = data.creditAccounts;
+          const currentCreditAccount = window.creditAccounts[0];
+          const balance = currentCreditAccount?.balance?.amount ?? "0";
+      
+          // Update display span
+          if (tokensSpan) {
+            tokensSpan.textContent = balance;
+          }
+      
+          return balance;
+        } catch (err) {
+          console.error('Error fetching AI credits:', err);
+          if (tokensSpan) tokensSpan.textContent = "0";
+          return 0;
+        }
+      }
             
       // Call the function using window.CUSTOMER_ID:
       getAICredits(window.CUSTOMER_ID).then(balance => {
