@@ -380,7 +380,29 @@
     window.CUSTOMER_ID = customerId;
       
       if (window.CUSTOMER_ID) {
-        fetchTokens();
+        // 1. Define base token endpoint URL
+        var baseUrl_tokens = "https://flashcard-gen-40834982812.us-central1.run.app"; 
+        
+        // 2. Fetch and display tokens safely
+        fetch(baseUrl_tokens + '/get-tokens/' + window.CUSTOMER_ID)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                var tokensSpan = document.getElementById('customer-tokens');
+                if (!tokensSpan) return;
+    
+                if (!data.creditAccounts || Object.keys(data.creditAccounts).length === 0) {
+                    tokensSpan.textContent = "0";
+                    return;
+                }
+    
+                var creditAccount = data.creditAccounts[0];
+                if (creditAccount && creditAccount.balance) {
+                    tokensSpan.textContent = creditAccount.balance.amount;
+                }
+            })
+            .catch(function(err) {
+                console.error('Error fetching tokens on init:', err);
+            });
     }
       
       // 4. Interface Mode Switching Logic
