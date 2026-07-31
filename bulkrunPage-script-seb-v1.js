@@ -1,78 +1,101 @@
-<script>
 (function() {
+  async function startApp() {
+    var appRoot = document.getElementById('app-root');
+    if (appRoot) {
+      try {
+        var res = await fetch('https://cdn.jsdelivr.net/gh/sssebastians/bulkRunCodes@main/bulkrunPage-html-seb-v1.html');
+        if (!res.ok) throw new Error('HTTP error! Status: ' + res.status);
+        appRoot.innerHTML = await res.text();
+      } catch (err) {
+        console.error('Error fetching CDN HTML:', err);
+      }
+    }
+
+    if (window.ShopifyAppData) {
+      document.querySelectorAll('#rag-app, #shopify-customer').forEach(function(el) {
+        el.setAttribute('data-customer-id', window.ShopifyAppData.customerId || '');
+      });
+
+      var ragApp = document.getElementById('rag-app');
+      if (ragApp) {
+        ragApp.setAttribute('data-customer-email', window.ShopifyAppData.customerEmail || '');
+        ragApp.setAttribute('data-shop-domain', window.ShopifyAppData.shopDomain || '');
+      }
+    }
+
+    initApp();
+  }
+
   function initApp() {
-    // 1. Grab DOM elements safely inside function scope
-    var modeSelector = document.getElementById('sidebar-mode-selector');
-    var chatbotUI = document.getElementById('chatbot-main-ui');
-    var quizUI = document.getElementById('quiz-main-ui');
-    var chatbotInput = document.querySelector('.chatbot-input');
-    var ragModelSection = document.getElementById('rag-model-section');
-    var ragDriveStatus = document.getElementById('rag-drive-status');
-    var folderInputs = document.getElementById('folder-inputs');
-    var settingsNavButton = document.getElementById('settings-nav-btn');
+    var modeSelector = document.getElementById('sidebar-mode-selector');[cite: 1]
+    var chatbotUI = document.getElementById('chatbot-main-ui');[cite: 1]
+    var quizUI = document.getElementById('quiz-main-ui');[cite: 1]
+    var chatbotInput = document.querySelector('.chatbot-input');[cite: 1]
+    var ragModelSection = document.getElementById('rag-model-section');[cite: 1]
+    var ragDriveStatus = document.getElementById('rag-drive-status');[cite: 1]
+    var folderInputs = document.getElementById('folder-inputs');[cite: 1]
+    var settingsNavButton = document.getElementById('settings-nav-btn');[cite: 1]
     
-    var currentExamScreen = 'dashboard';
+    var currentExamScreen = 'dashboard';[cite: 1]
 
     function updateModeDisplay(mode) {
-      if (modeSelector) modeSelector.value = mode;
+      if (modeSelector) modeSelector.value = mode;[cite: 1]
 
-      if (mode === 'quiz') {
-        if (currentExamScreen === 'dashboard') {
-          if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
-          if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
-          if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
+      if (mode === 'quiz') {[cite: 1]
+        if (currentExamScreen === 'dashboard') {[cite: 1]
+          if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');[cite: 1]
+          if (quizUI) quizUI.style.setProperty('display', 'none', 'important');[cite: 1]
+          if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');[cite: 1]
         } else {
-          if (chatbotUI) chatbotUI.style.setProperty('display', 'none', 'important');
-          if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');
-          if (chatbotInput) chatbotInput.style.setProperty('display', 'none', 'important');
+          if (chatbotUI) chatbotUI.style.setProperty('display', 'none', 'important');[cite: 1]
+          if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');[cite: 1]
+          if (chatbotInput) chatbotInput.style.setProperty('display', 'none', 'important');[cite: 1]
         }
 
-        if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
+        if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');[cite: 1]
+        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');[cite: 1]
         
-        if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'none';
-        if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'flex';
-        if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'flex';
-        if (folderInputs) folderInputs.style.display = 'none';
+        if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'none';[cite: 1]
+        if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'flex';[cite: 1]
+        if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'flex';[cite: 1]
+        if (folderInputs) folderInputs.style.display = 'none';[cite: 1]
       } else {
-        if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
-        if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
-        if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
+        if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');[cite: 1]
+        if (quizUI) quizUI.style.setProperty('display', 'none', 'important');[cite: 1]
+        if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');[cite: 1]
         
-        if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'inline-block';
-        if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'none';
-        if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'none';
-        if (folderInputs) folderInputs.style.display = mode === 'bulkrun' ? 'flex' : 'none';
+        if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'inline-block';[cite: 1]
+        if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'none';[cite: 1]
+        if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'none';[cite: 1]
+        if (folderInputs) folderInputs.style.display = mode === 'bulkrun' ? 'flex' : 'none';[cite: 1]
 
-        if (mode === 'llm' || mode === 'bulkrun') {
-          if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-          if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
+        if (mode === 'llm' || mode === 'bulkrun') {[cite: 1]
+          if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');[cite: 1]
+          if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');[cite: 1]
         } else {
-          if (ragModelSection) ragModelSection.style.setProperty('display', 'flex', 'important');
-          if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important');
+          if (ragModelSection) ragModelSection.style.setProperty('display', 'flex', 'important');[cite: 1]
+          if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important');[cite: 1]
         }
       }
     }
 
-    if (settingsNavButton) {
-      settingsNavButton.addEventListener('click', function() {
-        window.open('/pages/settings-v15', '_blank', 'noopener,noreferrer');
+    if (settingsNavButton) {[cite: 1]
+      settingsNavButton.addEventListener('click', function() {[cite: 1]
+        window.open('/pages/settings-v15', '_blank', 'noopener,noreferrer');[cite: 1]
       });
     }
 
-    if (modeSelector) {
-      updateModeDisplay(modeSelector.value);
-      modeSelector.addEventListener('change', function(e) {
-        updateModeDisplay(e.target.value);
+    if (modeSelector) {[cite: 1]
+      updateModeDisplay(modeSelector.value);[cite: 1]
+      modeSelector.addEventListener('change', function(e) {[cite: 1]
+        updateModeDisplay(e.target.value);[cite: 1]
       });
     }
   }
 
-  // Safe check: If DOM is already interactive/complete, run immediately. Otherwise wait for DOMContentLoaded.
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp);
+    document.addEventListener('DOMContentLoaded', startApp);
   } else {
-    initApp();
+    startApp();
   }
 })();
-</script>
