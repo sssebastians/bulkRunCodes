@@ -1,58 +1,55 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 <div
   class="chatbot-outer-wrapper"
   id="rag-app"
-  data-customer-id="{{ customer.id }}"
-  data-customer-email="{{ customer.email }}"
-  data-shop-domain="{{ shop.permanent_domain }}"
+  data-customer-id=""
+  data-customer-email=""
+  data-shop-domain=""
 >
 
-<!-- v9-thi: left sidebar for chat rooms -->
-<div class="chat-rooms-sidebar room-selection">
-
-  <!-- NEW: Settings button added -->
-  <button class="settings-btn" id="settings-nav-btn">
-    <i class="fa-solid fa-sliders-h"></i> Settings
-  </button>
-  <h3 class="sidebar-section-heading"><i class="fa-solid fa-comments"></i> Chat Rooms</h3>
-  <button id="create-room" class="create-room-btn"><i class="fa-solid fa-plus"></i> New Room</button>
-  <ul id="room-list" class="room-list">
-    <li class="room-item active" data-room-id="general">General</li>
-  </ul>
-
-  <!-- RAG Model Card -->
-  <div class="rag-model-card" id="rag-model-section">
-    <h3 class="rag-model-title">Trained AI Assistants</h3>
-    <button id="rag-sidebar-new-btn" class="rag-sidebar-new-btn"><i class="fa-solid fa-plus"></i> New Trained Assistant</button>
-    <p id="rag-indexing-hint" class="rag-poll-hint" style="display:none; margin-top: 10px;">
-      <i class="fa-solid fa-rotate fa-spin"></i> Indexing, auto-updating...
-    </p>
-    
-    <div class="rag-sidebar-section">
-      <h4 class="rag-sidebar-section-title"><i class="fa-solid fa-folder-open"></i> My Assistants</h4>
-      <div id="rag-sidebar-owned-rags" class="rag-item-list"></div>
-      <p id="rag-sidebar-owned-empty" class="rag-sidebar-empty" style="display:none;">No rags yet.</p>
-    </div>
-
-    <div class="rag-sidebar-section">
-      <h4 class="rag-sidebar-section-title"><i class="fa-solid fa-users"></i> Shared with me</h4>
-      <div id="rag-sidebar-shared-rags" class="rag-item-list"></div>
-      <p id="rag-sidebar-shared-empty" class="rag-sidebar-empty" style="display:none;">No shared rags.</p>
-    </div>
-
-    <button id="rag-see-all-rags-btn" class="rag-see-all-btn">
-      <i class="fa-solid fa-folder-tree"></i> See all assistants...
+  <!-- Left sidebar for chat rooms -->
+  <div class="chat-rooms-sidebar room-selection">
+    <button class="settings-btn" id="settings-nav-btn">
+      <i class="fa-solid fa-sliders-h"></i> Settings
     </button>
+    <h3 class="sidebar-section-heading"><i class="fa-solid fa-comments"></i> Chat Rooms</h3>
+    <button id="create-room" class="create-room-btn"><i class="fa-solid fa-plus"></i> New Room</button>
+    <ul id="room-list" class="room-list">
+      <li class="room-item active" data-room-id="general">General</li>
+    </ul>
 
+    <!-- RAG Model Card -->
+    <div class="rag-model-card" id="rag-model-section">
+      <h3 class="rag-model-title">Trained AI Assistants</h3>
+      <button id="rag-sidebar-new-btn" class="rag-sidebar-new-btn"><i class="fa-solid fa-plus"></i> New Trained Assistant</button>
+      <p id="rag-indexing-hint" class="rag-poll-hint" style="display:none; margin-top: 10px;">
+        <i class="fa-solid fa-rotate fa-spin"></i> Indexing, auto-updating...
+      </p>
+      
+      <div class="rag-sidebar-section">
+        <h4 class="rag-sidebar-section-title"><i class="fa-solid fa-folder-open"></i> My Assistants</h4>
+        <div id="rag-sidebar-owned-rags" class="rag-item-list"></div>
+        <p id="rag-sidebar-owned-empty" class="rag-sidebar-empty" style="display:none;">No rags yet.</p>
+      </div>
+
+      <div class="rag-sidebar-section">
+        <h4 class="rag-sidebar-section-title"><i class="fa-solid fa-users"></i> Shared with me</h4>
+        <div id="rag-sidebar-shared-rags" class="rag-item-list"></div>
+        <p id="rag-sidebar-shared-empty" class="rag-sidebar-empty" style="display:none;">No shared rags.</p>
+      </div>
+
+      <button id="rag-see-all-rags-btn" class="rag-see-all-btn">
+        <i class="fa-solid fa-folder-tree"></i> See all assistants...
+      </button>
+
+    </div>
   </div>
-</div>
 
 <div class="chatbot-main-wrapper" style="flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; background: #fff;">
 <div class="chatbot-container" id="chatbot-main-ui" style="flex: 1; min-height: 0;">
   <div class="chatbot-window">
     <div class="tokens-display">
       <div class="tokens-display-left">
-        <div id="shopify-customer" data-customer-id="{{ customer.id }}"></div>
+        <div id="shopify-customer" data-customer-id=""></div>
         <i class="fa-solid fa-coins"></i> AI credits: <span id="customer-tokens"></span>
         <select id="credit-account-selector" class="credit-account-selector"></select>
         <!-- v11-thi: buy more credits button -->
@@ -215,3 +212,126 @@
       </div>
     </div>
 </div>
+
+  <div id="rag-item-picker-modal" class="rag-modal-overlay" style="display:none;">
+  <div class="rag-modal" style="width: 1010px; max-height: 85vh;">
+    <div class="rag-modal-header">
+      <h2><i class="fa-solid fa-folder-tree"></i> Trained AI Assistants</h2>
+      <button id="rag-picker-modal-close" class="rag-modal-close">&#x2715;</button>
+    </div>
+    <div class="rag-modal-body">
+      <!-- Add assistant inline form -->
+      <div id="rag-picker-connect-prompt" class="rag-connect-drive-prompt" style="display:none;">
+        <p>Connect to Drive to add assistants.</p>
+        <button id="rag-picker-connect-btn" class="rag-btn rag-btn-primary">Connect to Drive</button>
+      </div>
+      <div id="rag-picker-add-form" class="rag-add-rag-form" style="display:none;">
+        <h4>Add New Trained Assistant</h4>
+        
+        <div class="rag-form-group">
+          <label for="rag-new-rag-id">Drive Folder ID <span class="rag-required-asterisk">*</span></label>
+          <input id="rag-new-rag-id" type="text" placeholder="Drive Folder ID (from URL)">
+          <p id="rag-item-id-error" class="rag-error" style="display:none;"></p>
+        </div>
+
+        <div class="rag-form-group">
+          <label for="rag-new-rag-connection-id">Connection <span class="rag-required-asterisk">*</span></label>
+          <select id="rag-new-rag-connection-id"></select>
+          <p id="rag-connection-error" class="rag-error" style="display:none;"></p>
+        </div>
+
+        <div class="rag-form-group">
+          <label for="rag-new-rag-name">Display Name <span class="rag-required-asterisk">*</span></label>
+          <input id="rag-new-rag-name" type="text" placeholder="Enter a display name">
+          <p id="rag-item-name-error" class="rag-error" style="display:none;"></p>
+        </div>
+
+        <p id="rag-add-rag-error" class="rag-error" style="display:none;"></p>
+        <div style="width: 100%; text-align: left; margin-top: 8px;">
+          <button id="rag-add-rag-btn" class="rag-btn rag-btn-primary" style="min-width: 160px;">Add assistant</button>
+        </div>
+      </div>
+
+      <hr class="rag-sidebar-divider">
+
+      <div class="rag-sidebar-section">
+        <h3 class="rag-sidebar-section-title"><i class="fa-solid fa-folder-open"></i> My Assistants</h3>
+        <div id="rag-modal-owned-rags" class="rag-item-list"></div>
+        <p id="rag-modal-owned-empty" class="rag-sidebar-empty" style="display:none;">No rags yet.</p>
+      </div>
+
+      <div class="rag-sidebar-section">
+        <h3 class="rag-sidebar-section-title"><i class="fa-solid fa-users"></i> Shared with me</h3>
+        <div id="rag-modal-shared-rags" class="rag-item-list"></div>
+        <p id="rag-modal-shared-empty" class="rag-sidebar-empty" style="display:none;">No shared rags.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rag Detail Modal -->
+<div id="rag-item-detail-modal" class="rag-modal-overlay" style="display:none;">
+  <div class="rag-modal" style="width: 650px;">
+    <div class="rag-modal-header">
+      <h2 id="rag-detail-modal-title"><i class="fa-solid fa-share-nodes"></i> Share Rag</h2>
+      <button id="rag-detail-modal-close" class="rag-modal-close">&#x2715;</button>
+    </div>
+    <div class="rag-modal-body">
+      <!-- Storage section -->
+      <div id="rag-item-storage-info" class="rag-item-storage-info" style="display:none; margin-bottom: 20px;">
+        <p style="margin:0; color:#555; font-size:0.9rem;"><strong><i class="fa-solid fa-database"></i> Total Storage Used:</strong> <span id="rag-storage-total" class="rag-storage-value" style="margin-left: 8px;">0 B</span></p>
+      </div>
+      <hr class="rag-sidebar-divider" id="rag-storage-divider" style="display:none;">
+
+      <!-- Share section -->
+      <div class="rag-share-input-row">
+        <input id="rag-share-email" type="email" placeholder="Enter user email">
+        <button id="rag-share-btn" class="rag-btn rag-btn-primary">Share</button>
+      </div>
+      <p id="rag-share-error" class="rag-error" style="display:none;"></p>
+      <div id="rag-share-list" class="rag-share-list" style="display:none; margin-top: 15px;">
+        <h4>Shared with</h4>
+        <div id="rag-share-entries"></div>
+      </div>
+      <p id="rag-share-empty" class="rag-share-empty" style="margin-top: 10px;">Not shared with anyone yet.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Modal -->
+<div id="rag-item-rename-modal" class="rag-modal-overlay" style="display:none;">
+  <div class="rag-modal" style="width: 500px;">
+    <div class="rag-modal-header">
+      <h2><i class="fa-solid fa-pen"></i> Rename Rag</h2>
+      <button id="rag-rename-modal-close" class="rag-modal-close">&#x2715;</button>
+    </div>
+    <div class="rag-modal-body">
+      <div class="rag-share-input-row" style="margin-bottom: 15px;">
+        <input id="rag-rename-name" type="text" placeholder="New Display Name">
+      </div>
+      <p id="rag-rename-error" class="rag-error" style="display:none;"></p>
+      <div style="text-align: right;">
+        <button id="rag-rename-btn" class="rag-btn rag-btn-primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Alert Modal -->
+<div id="rag-alert-modal" class="rag-popup" style="display: none; z-index: 10001;">
+  <div class="rag-popup-content" style="text-align: center;">
+    <span class="close-popup" onclick="document.getElementById('rag-alert-modal').style.display='none';">&times;</span>
+    <h3 style="color: #dc2626;"><i class="fa-solid fa-triangle-exclamation"></i> Notice</h3>
+    <p id="rag-alert-message" style="margin: 16px 0; color: #444;"></p>
+    <div class="popup-actions" style="justify-content: center;">
+      <button onclick="document.getElementById('rag-alert-modal').style.display='none';" class="use-rag-btn">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="rag-toast-container" class="rag-toast-container"></div>
+
+<!-- v9-thi: close outer wrapper -->
+</div>
+
+<input type="file" id="file-input" multiple hidden>
