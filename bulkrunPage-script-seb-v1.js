@@ -1,40 +1,31 @@
 (function() {
-  // Store ID mappings for each mode
+  // Map modes to storeId
   var MODE_STORE_MAP = {
     bulkrun: 'data-entry-test',
     llm: 'llm-no-stream',
     rag: 'rag-store',
     quiz: 'quiz-store'
   };
-  
-  function updateBotListForMode(mode) {
+
+  function updateBotSelectorForMode(mode) {
     var botSelector = document.getElementById('bot-selector');
     if (!botSelector) return;
 
     var storeId = MODE_STORE_MAP[mode] || 'llm-no-stream';
-    var bots = STORE_BOTS[storeId] || [];
 
-    // Clear existing options
-    botSelector.innerHTML = '';
-
-    if (bots.length === 0) {
-      var opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = 'No bots available';
-      botSelector.appendChild(opt);
-      return;
-    }
-
-    // Populate options for the active storeId
-    bots.forEach(function(bot) {
-      var opt = document.createElement('option');
-      opt.value = bot.id;
-      opt.textContent = bot.name;
-      botSelector.appendChild(opt);
-    });
-
-    // Store active storeId on the select element for downstream API calls
+    // 1. Update the storeId attribute on the element
     botSelector.setAttribute('data-store-id', storeId);
+    botSelector.dataset.storeId = storeId;
+
+    // 2. Ensure bot selector dropdown is visible
+    botSelector.style.display = 'inline-block';
+
+    // 3. Notify your other JS file that storeId/mode has changed
+    botSelector.dispatchEvent(new CustomEvent('store:changed', { 
+      detail: { storeId: storeId, mode: mode },
+      bubbles: true 
+    }));
+    botSelector.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   function initApp() {
@@ -98,8 +89,8 @@
 
       if (modeSelector) modeSelector.value = mode;
 
-      // Update bot dropdown according to mode's storeId
-      updateBotListForMode(mode);
+      // Update storeId and trigger event for external JS
+      updateBotSelectorForMode(mode);
 
       var chatbotInput = document.querySelector('.chatbot-input');
 
