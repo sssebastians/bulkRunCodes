@@ -1,5 +1,5 @@
 (function() {
-  // Map modes to storeId
+  // Store ID mappings for each mode
   var MODE_STORE_MAP = {
     bulkrun: 'data-entry-test',
     llm: 'llm-no-stream',
@@ -13,19 +13,15 @@
 
     var storeId = MODE_STORE_MAP[mode] || 'llm-no-stream';
 
-    // 1. Update the storeId attribute on the element
+    // Set data attribute on the select element
     botSelector.setAttribute('data-store-id', storeId);
     botSelector.dataset.storeId = storeId;
-
-    // 2. Ensure bot selector dropdown is visible
     botSelector.style.display = 'inline-block';
 
-    // 3. Notify your other JS file that storeId/mode has changed
-    botSelector.dispatchEvent(new CustomEvent('store:changed', { 
-      detail: { storeId: storeId, mode: mode },
-      bubbles: true 
-    }));
-    botSelector.dispatchEvent(new Event('change', { bubbles: true }));
+    // Call the main script's getBotsData with the new storeId
+    if (typeof window.getBotsData === 'function') {
+      window.getBotsData(storeId);
+    }
   }
 
   function initApp() {
@@ -89,19 +85,17 @@
 
       if (modeSelector) modeSelector.value = mode;
 
-      // Update storeId and trigger event for external JS
+      // Trigger bot reload for current mode storeId
       updateBotSelectorForMode(mode);
 
       var chatbotInput = document.querySelector('.chatbot-input');
 
       if (mode === 'quiz') {
         if (currentExamScreen === 'dashboard') {
-          // Dashboard acts as chat bot
           if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
           if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
           if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
         } else {
-          // Player/Editor screen
           if (chatbotUI) chatbotUI.style.setProperty('display', 'none', 'important');
           if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');
           if (chatbotInput) chatbotInput.style.setProperty('display', 'none', 'important');
@@ -183,7 +177,6 @@
     bindSelectedFolderVisibility('selected-input-folder');
     bindSelectedFolderVisibility('selected-output-folder');
 
-    // Listen to exam screen state to correctly toggle UI while in quiz mode
     document.addEventListener('exam:state-changed', function(e) {
       if (e.detail && e.detail.screen) {
         currentExamScreen = e.detail.screen;
@@ -249,7 +242,6 @@
     }
   }
 
-  // Safe DOM check for loaded state
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
   } else {
