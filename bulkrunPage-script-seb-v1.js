@@ -1,5 +1,5 @@
 (function() {
-  // Store ID mappings (Only bulkrun and llm as requested)
+  // Add any present or future store mappings here
   var MODE_STORE_MAP = {
     bulkrun: 'data-entry-test',
     llm: 'llm-no-stream'
@@ -8,7 +8,7 @@
   function updateBotSelectorForMode(mode) {
     var botSelector = document.getElementById('bot-selector');
     
-    // Map modes to store IDs
+    // Retrieve store ID dynamically
     var storeId = MODE_STORE_MAP[mode] || 'llm-no-stream';
 
     if (botSelector) {
@@ -17,16 +17,16 @@
         botSelector.style.display = 'inline-block';
     }
 
-    // Keep global storeId in sync
+    // Keep global storeId updated
     window.storeId = storeId;
 
-    // Call window.getBots to reload BOTH Categories and Bots for the selected mode
+    // Trigger dynamic fetch in Shopify central script
     if (typeof window.getBots === 'function') {
         window.getBots(storeId);
     } else if (typeof window.getBotsData === 'function') {
         window.getBotsData(storeId);
     }
-}
+  }
 
   function initApp() {
     var modeSelector = document.getElementById('sidebar-mode-selector');
