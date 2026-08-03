@@ -1,9 +1,7 @@
 (function() {
-  // Add any present or future store mappings here
   window.MODE_STORE_MAP = window.MODE_STORE_MAP || {
   llm: 'llm-no-stream',
   bulkrun: 'data-entry-test'
-  // 'image-gen': 'image-store-id', // Example: Adding a new store ID is 1 line!
 };
 
 function updateBotSelectorForMode(mode) {
