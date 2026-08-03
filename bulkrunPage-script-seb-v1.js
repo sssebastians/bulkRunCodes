@@ -7,21 +7,26 @@
 
   function updateBotSelectorForMode(mode) {
     var botSelector = document.getElementById('bot-selector');
-    if (!botSelector) return;
-
-    // Default to llm-no-stream if mode is not in the map
+    
+    // Map modes to store IDs
     var storeId = MODE_STORE_MAP[mode] || 'llm-no-stream';
 
-    // Set data attribute on the select element
-    botSelector.setAttribute('data-store-id', storeId);
-    botSelector.dataset.storeId = storeId;
-    botSelector.style.display = 'inline-block';
-
-    // Call the main script's getBotsData with the new storeId
-    if (typeof window.getBotsData === 'function') {
-      window.getBotsData(storeId);
+    if (botSelector) {
+        botSelector.setAttribute('data-store-id', storeId);
+        botSelector.dataset.storeId = storeId;
+        botSelector.style.display = 'inline-block';
     }
-  }
+
+    // Keep global storeId in sync
+    window.storeId = storeId;
+
+    // Call window.getBots to reload BOTH Categories and Bots for the selected mode
+    if (typeof window.getBots === 'function') {
+        window.getBots(storeId);
+    } else if (typeof window.getBotsData === 'function') {
+        window.getBotsData(storeId);
+    }
+}
 
   function initApp() {
     var modeSelector = document.getElementById('sidebar-mode-selector');
