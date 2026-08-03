@@ -1,33 +1,33 @@
 (function() {
   // Add any present or future store mappings here
-  var MODE_STORE_MAP = {
-    bulkrun: 'data-entry-test',
-    llm: 'llm-no-stream'
-  };
+  window.MODE_STORE_MAP = window.MODE_STORE_MAP || {
+  llm: 'llm-no-stream',
+  bulkrun: 'data-entry-test'
+  // 'image-gen': 'image-store-id', // Example: Adding a new store ID is 1 line!
+};
 
-  function updateBotSelectorForMode(mode) {
-    var botSelector = document.getElementById('bot-selector');
-    
-    // Retrieve store ID dynamically
-    var storeId = MODE_STORE_MAP[mode] || 'llm-no-stream';
+function updateBotSelectorForMode(mode) {
+  var botSelector = document.getElementById('bot-selector');[cite: 1, 3]
+  
+  // Normalize mode string (e.g. "LLM", "Bulk Run" -> "llm", "bulkrun")
+  var cleanMode = mode ? mode.toString().toLowerCase().replace(/[\s-_]/g, '') : 'llm';
+  
+  // Resolve dynamic storeId
+  var targetStoreId = window.MODE_STORE_MAP[cleanMode] || cleanMode;
 
-    if (botSelector) {
-        botSelector.setAttribute('data-store-id', storeId);
-        botSelector.dataset.storeId = storeId;
-        botSelector.style.display = 'inline-block';
-    }
-
-    // Keep global storeId updated
-    window.storeId = storeId;
-
-    // Trigger dynamic fetch in Shopify central script
-    if (typeof window.getBots === 'function') {
-        window.getBots(storeId);
-    } else if (typeof window.getBotsData === 'function') {
-        window.getBotsData(storeId);
-    }
+  if (botSelector) {
+    botSelector.setAttribute('data-store-id', targetStoreId);[cite: 1]
+    botSelector.dataset.storeId = targetStoreId;[cite: 1]
   }
 
+  // Keep global storeId updated
+  window.storeId = targetStoreId;[cite: 1]
+
+  // Sequential async reload of bots, categories, and conversation lists
+  if (typeof window.getBots === 'function') {
+    window.getBots(targetStoreId);[cite: 1]
+  }
+}
   function initApp() {
     var modeSelector = document.getElementById('sidebar-mode-selector');
     var chatbotUI = document.getElementById('chatbot-main-ui');
