@@ -7,25 +7,21 @@
 };
 
 function updateBotSelectorForMode(mode) {
-  var botSelector = document.getElementById('bot-selector');[cite: 1, 3]
+  var botSelector = document.getElementById('bot-selector');
   
-  // Normalize mode string (e.g. "LLM", "Bulk Run" -> "llm", "bulkrun")
   var cleanMode = mode ? mode.toString().toLowerCase().replace(/[\s-_]/g, '') : 'llm';
-  
-  // Resolve dynamic storeId
-  var targetStoreId = window.MODE_STORE_MAP[cleanMode] || cleanMode;
+  var targetStoreId = (window.MODE_STORE_MAP && window.MODE_STORE_MAP[cleanMode]) || 'llm-no-stream';
 
   if (botSelector) {
-    botSelector.setAttribute('data-store-id', targetStoreId);[cite: 1]
-    botSelector.dataset.storeId = targetStoreId;[cite: 1]
+    botSelector.setAttribute('data-store-id', targetStoreId);
+    botSelector.dataset.storeId = targetStoreId;
   }
 
-  // Keep global storeId updated
-  window.storeId = targetStoreId;[cite: 1]
+  window.storeId = targetStoreId;
 
-  // Sequential async reload of bots, categories, and conversation lists
+  // FIX HERE: Call window.getBots, NOT getBotsData!
   if (typeof window.getBots === 'function') {
-    window.getBots(targetStoreId);[cite: 1]
+    window.getBots(targetStoreId);
   }
 }
   function initApp() {
