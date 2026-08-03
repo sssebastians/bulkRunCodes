@@ -7,53 +7,20 @@
     quiz: 'quiz-store'
   };
 
-  // Direct bot fetcher (No window.getBotsData needed!)
-  async function fetchBotsDirectly(storeId) {
-    try {
-      var apiKey = window.langya_secret_key || '';
+  function updateBotSelectorForMode(mode) {
+    var botSelector = document.getElementById('bot-selector');
+    if (!botSelector) return;
 
-      // 1. Fetch pageMaster to get endpoint table name
-      var resp_pages = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'x-api-key': apiKey 
-        },
-        body: JSON.stringify({ collectionName: 'pageMaster' })
-      });
+    var storeId = MODE_STORE_MAP[mode] || 'llm-no-stream';
 
-      var dat_pages = await resp_pages.json();
-      var pageMasterData = dat_pages.results || [];
-      var storeMatch = pageMasterData.find(function(data) { return data.id === storeId; });
-      
-      if (!storeMatch) return;
+    // Set data attribute on the select element
+    botSelector.setAttribute('data-store-id', storeId);
+    botSelector.dataset.storeId = storeId;
+    botSelector.style.display = 'inline-block';
 
-      // 2. Fetch bots from target table
-      var resp_tab = await fetch('https://us-central1-langyaai-rag.cloudfunctions.net/firestore_v1/query', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'x-api-key': apiKey 
-        },
-        body: JSON.stringify({ collectionName: storeMatch['endpoint-table-name'] })
-      });
-
-      var dat_tab = await resp_tab.json();
-      var botSelector = document.getElementById('bot-selector');
-      if (!botSelector) return;
-      
-      // 3. Render directly into #bot-selector
-      botSelector.innerHTML = ''; 
-      (dat_tab.results || []).forEach(function(doc) {
-        if (doc.Showing === 1) {
-          var opt = document.createElement('option');
-          opt.value = doc.id;
-          opt.textContent = doc.id + ' (' + (doc["AI Credit"] || 1) + ' credits)';
-          botSelector.appendChild(opt);
-        }
-      });
-    } catch (err) {
-      console.error('Failed to load bots directly:', err);
+    // Call the main script's getBotsData with the new storeId
+    if (typeof window.getBotsData === 'function') {
+      window.getBotsData(storeId);
     }
   }
 
@@ -118,17 +85,8 @@
 
       if (modeSelector) modeSelector.value = mode;
 
-      // Update storeId data attribute and fetch bots inline
-      var botSelector = document.getElementById('bot-selector');
-      if (botSelector) {
-        var storeId = MODE_STORE_MAP[mode] || 'llm-no-stream';
-        botSelector.setAttribute('data-store-id', storeId);
-        botSelector.dataset.storeId = storeId;
-        botSelector.style.display = 'inline-block';
-
-        // Trigger inline fetch
-        fetchBotsDirectly(storeId);
-      }
+      // Trigger bot reload for current mode storeId
+      updateBotSelectorForMode(mode);
 
       var chatbotInput = document.querySelector('.chatbot-input');
 
@@ -195,7 +153,7 @@
       });
     }
 
-    // Settings page opener
+    // --- Settings page opener ---
     if (settingsNavButton) {
       settingsNavButton.addEventListener('click', function() {
         window.open('/pages/settings-v15', '_blank', 'noopener,noreferrer');
@@ -235,7 +193,7 @@
       });
     }
     
-    // Bind Quiz actions from shared chatbox
+    // Bind Quiz actions from the shared chatbox
     var btnEdit = document.getElementById('quiz-generate-edit-btn');
     var btnStart = document.getElementById('quiz-generate-start-btn');
     var btnUpload = document.getElementById('chatbot-upload-questions-btn');
