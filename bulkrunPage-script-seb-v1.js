@@ -1,16 +1,15 @@
 (function() {
-  // Store ID mappings for each mode
+  // Store ID mappings (Only bulkrun and llm as requested)
   var MODE_STORE_MAP = {
     bulkrun: 'data-entry-test',
-    llm: 'llm-no-stream',
-    rag: 'rag-store',
-    quiz: 'quiz-store'
+    llm: 'llm-no-stream'
   };
 
   function updateBotSelectorForMode(mode) {
     var botSelector = document.getElementById('bot-selector');
     if (!botSelector) return;
 
+    // Default to llm-no-stream if mode is not in the map
     var storeId = MODE_STORE_MAP[mode] || 'llm-no-stream';
 
     // Set data attribute on the select element
@@ -186,8 +185,11 @@
       }
     });
 
-    if (modeSelector && chatbotUI && quizUI) {
+    if (modeSelector) {
+      // Trigger initial state load
       updateModeDisplay(modeSelector.value);
+
+      // Listen for dropdown changes
       modeSelector.addEventListener('change', function(e) {
         updateModeDisplay(e.target.value);
       });
