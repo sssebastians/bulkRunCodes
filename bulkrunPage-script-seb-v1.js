@@ -271,7 +271,6 @@
     }
   }
 
-  // 🛡️ Safe Bot Loader with Retry Guard
   function runInitialBotLoad(attempts) {
     attempts = attempts || 0;
     
