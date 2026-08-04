@@ -1,14 +1,43 @@
 (function() {
-  var MODE_STORE_MAP = {
-    bulkrun: 'data-entry-test',
-    llm: 'llm-no-stream'
+  window.APP_MODES = {
+    'llm': {
+      storeId: 'llm-no-stream',
+      showFolderInputs: false,
+      showSourceMode: false,
+      defaultAsync: false,
+      showRagSections: false,
+      placeholderText: "Type your message..."
+    },
+    'bulkrun': {
+      storeId: 'data-entry-test',
+      showFolderInputs: true,
+      showSourceMode: true,
+      defaultAsync: true,
+      showRagSections: false,
+      placeholderText: "Type instructions for bulk processing..."
+    },
+    'rag': {
+      storeId: 'data-entry-test', 
+      showFolderInputs: false,
+      showSourceMode: false,
+      defaultAsync: false,
+      showRagSections: true,
+      placeholderText: "Ask your trained assistant..."
+    },
+    'quiz': {
+      storeId: 'data-entry-test',
+      showFolderInputs: false,
+      showSourceMode: false,
+      defaultAsync: false,
+      showRagSections: false,
+      placeholderText: "Enter a prompt to generate a quiz..."
+    }
   };
 
   function updateBotSelectorForMode(mode) {
     var botSelector = document.getElementById('bot-selector');
-    
-    // Retrieve store ID dynamically
-    var storeId = MODE_STORE_MAP[mode] || 'data-entry-test';
+    var modeConfig = window.APP_MODES[mode] || window.APP_MODES['llm'];
+    var storeId = modeConfig.storeId;
 
     if (botSelector) {
         botSelector.setAttribute('data-store-id', storeId);
@@ -37,6 +66,8 @@
     var outputProviderSelector = document.getElementById('output-provider-selector');
     var unifiedInputButton = document.getElementById('choose-input-folder');
     var unifiedOutputButton = document.getElementById('choose-output-folder');
+    
+    var chatInputField = document.getElementById('chatbot-input-field') || document.querySelector('.chatbot-input input') || document.querySelector('.chatbot-input textarea');
 
     var inputButtonMap = {
       dropbox: document.getElementById('choose-folder'),
@@ -56,11 +87,11 @@
       quiz: { html: '', chatHistory: [], userHistory: [] },
       bulkrun: { html: '', chatHistory: [], userHistory: [] }
     };
+    
     var previousMode = modeSelector ? modeSelector.value : 'rag';
     var currentExamScreen = window.ExamApp && window.ExamApp.state ? window.ExamApp.state.screen : 'dashboard';
 
     function updateModeDisplay(mode) {
-      // Save state before switching away from a chat mode
       if (previousMode !== mode) {
         var msgDiv = document.querySelector('.chatbot-messages');
         if (msgDiv && window.chatModeStates[previousMode]) {
@@ -72,7 +103,6 @@
         }
       }
 
-      // Restore state when entering a chat mode
       if (previousMode !== mode) {
         var msgDiv = document.querySelector('.chatbot-messages');
         if (msgDiv && window.chatModeStates[mode]) {
@@ -83,13 +113,16 @@
       }
       
       previousMode = mode;
-
       if (modeSelector) modeSelector.value = mode;
 
-      // Trigger bot reload for current mode storeId
       updateBotSelectorForMode(mode);
 
+      var modeConfig = window.APP_MODES[mode] || window.APP_MODES['llm'];
       var chatbotInput = document.querySelector('.chatbot-input');
+
+      if (chatInputField && modeConfig.placeholderText) {
+          chatInputField.placeholder = modeConfig.placeholderText;
+      }
 
       if (mode === 'quiz') {
         if (currentExamScreen === 'dashboard') {
@@ -101,38 +134,34 @@
           if (quizUI) quizUI.style.setProperty('display', 'flex', 'important');
           if (chatbotInput) chatbotInput.style.setProperty('display', 'none', 'important');
         }
-
-        if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-        if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
         
         if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'none';
-        if (document.getElementById('sidebar-mode-selector')) document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
         if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'flex';
         if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'flex';
-        if (folderInputs) folderInputs.style.display = 'none';
       } else {
         if (chatbotUI) chatbotUI.style.setProperty('display', 'flex', 'important');
         if (quizUI) quizUI.style.setProperty('display', 'none', 'important');
         if (chatbotInput) chatbotInput.style.setProperty('display', 'block', 'important');
         
         if (document.getElementById('send-button')) document.getElementById('send-button').style.display = 'inline-block';
-        if (document.getElementById('sidebar-mode-selector')) document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
         if (document.getElementById('quiz-parameters-row')) document.getElementById('quiz-parameters-row').style.display = 'none';
         if (document.getElementById('quiz-generate-buttons')) document.getElementById('quiz-generate-buttons').style.display = 'none';
-        if (folderInputs) folderInputs.style.display = mode === 'bulkrun' ? 'flex' : 'none';
+      }
 
-        if (mode === 'llm') {
-          if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-          if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
-        } else {
-          if (ragModelSection) ragModelSection.style.setProperty('display', 'flex', 'important');
-          if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'flex', 'important');
-        }
+      if (document.getElementById('sidebar-mode-selector')) {
+          document.getElementById('sidebar-mode-selector').style.display = 'inline-block';
+      }
 
-        if (mode === 'bulkrun') {
-          if (ragModelSection) ragModelSection.style.setProperty('display', 'none', 'important');
-          if (ragDriveStatus) ragDriveStatus.style.setProperty('display', 'none', 'important');
-        }
+      if (folderInputs) {
+          folderInputs.style.display = modeConfig.showFolderInputs ? 'flex' : 'none';
+      }
+
+      if (ragModelSection) {
+          ragModelSection.style.setProperty('display', modeConfig.showRagSections ? 'flex' : 'none', 'important');
+      }
+
+      if (ragDriveStatus) {
+          ragDriveStatus.style.setProperty('display', modeConfig.showRagSections ? 'flex' : 'none', 'important');
       }
     }
 
@@ -154,7 +183,6 @@
       });
     }
 
-    // --- Settings page opener ---
     if (settingsNavButton) {
       settingsNavButton.addEventListener('click', function() {
         window.open('/pages/settings-v15', '_blank', 'noopener,noreferrer');
@@ -188,16 +216,13 @@
     });
 
     if (modeSelector) {
-      // Trigger initial state load
       updateModeDisplay(modeSelector.value);
 
-      // Listen for dropdown changes
       modeSelector.addEventListener('change', function(e) {
         updateModeDisplay(e.target.value);
       });
     }
     
-    // Bind Quiz actions from the shared chatbox
     var btnEdit = document.getElementById('quiz-generate-edit-btn');
     var btnStart = document.getElementById('quiz-generate-start-btn');
     var btnUpload = document.getElementById('chatbot-upload-questions-btn');
@@ -245,6 +270,31 @@
       });
     }
   }
+
+  // 🛡️ Safe Bot Loader with Retry Guard
+  function runInitialBotLoad(attempts) {
+    attempts = attempts || 0;
+    
+    // Check if API key exists globally yet
+    var hasApiKey = !!(window.langya_secret_key || (typeof langya_secret_key !== 'undefined' ? langya_secret_key : ''));
+    var hasBotsFn = typeof window.getBots === 'function' || typeof window.getBotsData === 'function';
+
+    if (hasBotsFn && hasApiKey) {
+      var modeSelector = document.getElementById('sidebar-mode-selector');
+      var mode = modeSelector && modeSelector.value ? modeSelector.value.toLowerCase().trim() : 'rag';
+      updateBotSelectorForMode(mode);
+    } else if (attempts < 30) {
+      // Retry every 100ms (up to 3 seconds) until the API key script is loaded
+      setTimeout(function() {
+        runInitialBotLoad(attempts + 1);
+      }, 100);
+    } else {
+      console.warn("Bot load timed out: Missing API key (langya_secret_key) or getBots function.");
+    }
+  }
+
+  // Trigger immediate bot fetch attempt safely
+  runInitialBotLoad();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
