@@ -1,27 +1,30 @@
 (function() {
-  window.MODE_STORE_MAP = window.MODE_STORE_MAP || {
-  llm: 'llm-no-stream',
-  bulkrun: 'data-entry-test'
-};
+  var MODE_STORE_MAP = {
+    bulkrun: 'data-entry-test',
+    llm: 'llm-no-stream'
+  };
 
-function updateBotSelectorForMode(mode) {
-  var botSelector = document.getElementById('bot-selector');
-  
-  var cleanMode = mode ? mode.toString().toLowerCase().replace(/[\s-_]/g, '') : 'llm';
-  var targetStoreId = (window.MODE_STORE_MAP && window.MODE_STORE_MAP[cleanMode]) || 'llm-no-stream';
+  function updateBotSelectorForMode(mode) {
+    var botSelector = document.getElementById('bot-selector');
+    
+    // Retrieve store ID dynamically
+    var storeId = MODE_STORE_MAP[mode] || 'data-entry-test';
 
-  if (botSelector) {
-    botSelector.setAttribute('data-store-id', targetStoreId);
-    botSelector.dataset.storeId = targetStoreId;
+    if (botSelector) {
+        botSelector.setAttribute('data-store-id', storeId);
+        botSelector.dataset.storeId = storeId;
+        botSelector.style.display = 'inline-block';
+    }
+
+    window.storeId = storeId;
+
+    if (typeof window.getBots === 'function') {
+        window.getBots(storeId);
+    } else if (typeof window.getBotsData === 'function') {
+        window.getBotsData(storeId);
+    }
   }
 
-  window.storeId = targetStoreId;
-
-  // FIX HERE: Call window.getBots, NOT getBotsData!
-  if (typeof window.getBots === 'function') {
-    window.getBots(targetStoreId);
-  }
-}
   function initApp() {
     var modeSelector = document.getElementById('sidebar-mode-selector');
     var chatbotUI = document.getElementById('chatbot-main-ui');
