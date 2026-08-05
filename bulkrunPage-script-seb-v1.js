@@ -17,7 +17,7 @@
       placeholderText: "Type instructions for bulk processing..."
     },
     'rag': {
-      storeId: 'data-entry-test', 
+      storeId: 'llm-no-stream', 
       showFolderInputs: false,
       showSourceMode: false,
       defaultAsync: false,
@@ -25,7 +25,7 @@
       placeholderText: "Ask your trained assistant..."
     },
     'quiz': {
-      storeId: 'data-entry-test',
+      storeId: 'llm-no-stream',
       showFolderInputs: false,
       showSourceMode: false,
       defaultAsync: false,
