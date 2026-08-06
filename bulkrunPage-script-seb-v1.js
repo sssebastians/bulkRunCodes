@@ -88,10 +88,30 @@
       bulkrun: { html: '', chatHistory: [], userHistory: [] }
     };
     
-    var previousMode = modeSelector ? modeSelector.value : 'rag';
+    // --- PERSISTENCE LOGIC START ---
+    // 1. Check URL parameters for mode or restore from localStorage
+    var urlParams = new URLSearchParams(window.location.search);
+    var savedMode = urlParams.get('mode') || localStorage.getItem('active_app_mode');
+    
+    // 2. Determine initial mode: stored mode -> dropdown value -> fallback default
+    var initialMode = savedMode && window.APP_MODES[savedMode] 
+      ? savedMode 
+      : (modeSelector ? modeSelector.value : 'rag');
+
+    var previousMode = initialMode;
+
+    if (modeSelector) {
+      modeSelector.value = initialMode;
+    }
+    localStorage.setItem('active_app_mode', initialMode);
+    // --- PERSISTENCE LOGIC END ---
+
     var currentExamScreen = window.ExamApp && window.ExamApp.state ? window.ExamApp.state.screen : 'dashboard';
 
     function updateModeDisplay(mode) {
+      // Save updated mode to localStorage whenever user switches mode
+      localStorage.setItem('active_app_mode', mode);
+
       if (previousMode !== mode) {
         var msgDiv = document.querySelector('.chatbot-messages');
         if (msgDiv && window.chatModeStates[previousMode]) {
@@ -216,7 +236,7 @@
     });
 
     if (modeSelector) {
-      updateModeDisplay(modeSelector.value);
+      updateModeDisplay(initialMode);
 
       modeSelector.addEventListener('change', function(e) {
         updateModeDisplay(e.target.value);
@@ -274,16 +294,19 @@
   function runInitialBotLoad(attempts) {
     attempts = attempts || 0;
     
-    // Check if API key exists globally yet
     var hasApiKey = !!(window.langya_secret_key || (typeof langya_secret_key !== 'undefined' ? langya_secret_key : ''));
     var hasBotsFn = typeof window.getBots === 'function' || typeof window.getBotsData === 'function';
 
     if (hasBotsFn && hasApiKey) {
       var modeSelector = document.getElementById('sidebar-mode-selector');
-      var mode = modeSelector && modeSelector.value ? modeSelector.value.toLowerCase().trim() : 'rag';
+      // Read active mode from localStorage if available, otherwise read dropdown value
+      var savedMode = localStorage.getItem('active_app_mode');
+      var mode = savedMode && window.APP_MODES[savedMode] 
+        ? savedMode 
+        : (modeSelector && modeSelector.value ? modeSelector.value.toLowerCase().trim() : 'rag');
+      
       updateBotSelectorForMode(mode);
     } else if (attempts < 30) {
-      // Retry every 100ms (up to 3 seconds) until the API key script is loaded
       setTimeout(function() {
         runInitialBotLoad(attempts + 1);
       }, 100);
