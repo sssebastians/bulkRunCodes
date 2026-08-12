@@ -60,10 +60,46 @@
   max-height: calc(100vh - 60px);
 }
 
+.chat-rooms-sidebar .room-item {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px !important;
+}
+
+/* 2. Allow the room name to expand and take up all available space on the first line */
+.chat-rooms-sidebar .room-item span:first-child {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  padding-right: 8px !important;
+  font-size: 1.2rem
+}
+
+/* 3. Keep the delete button firmly on the right side of the first line */
+.chat-rooms-sidebar .room-item .delete-room-btn {
+  flex: 0 0 auto !important;
+  order: 2 !important; /* Ensures it stays next to the name */
+}
+
+/* 4. timestamp drop down to a new line */
+.chat-rooms-sidebar .room-item span[style*='float: right'],
+.chat-rooms-sidebar .room-item span:last-child {
+  flex: 0 0 100% !important; /* Forces it to take up the full width, pushing it down */
+  order: 3 !important;
+  float: none !important; /* Overrides the inline style float */
+  text-align: left !important;
+  margin-left: 0 !important;
+  font-size: 0.75rem !important;
+  opacity: 0.8 !important; /* Softens the timestamp color slightly */
+}
+
 /* v10-thi: push local folder actions to bottom of sidebar */
 .sidebar-local-actions {
   margin-top: auto;
-  padding-top: 15px;
   border-top: 1px solid #ddd;
   display: flex;
   flex-direction: column;
