@@ -205,7 +205,7 @@
 
     if (settingsNavButton) {
       settingsNavButton.addEventListener('click', function() {
-        window.open('/pages/settings-v15', '_blank', 'noopener,noreferrer');
+        window.open('/pages/settings-v15-seb-v1', '_blank', 'noopener,noreferrer');
       });
     }
 
