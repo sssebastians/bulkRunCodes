@@ -484,7 +484,7 @@
 
 .input-folder-container > span,
 .output-folder-container > span {
-  flex: 0 0 110px; /* Allow label size to adjust dynamically without taking fixed wide space */
+  flex: 0 0 70px; /* Allow label size to adjust dynamically without taking fixed wide space */
   width: 110px;
   font-weight: 600;
   white-space: nowrap;
