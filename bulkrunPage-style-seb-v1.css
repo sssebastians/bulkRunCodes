@@ -27,7 +27,14 @@
   overflow: hidden ;
   position: relative;
   margin-top: 0;
-  gap: 0;
+}
+
+.chat-rooms-sidebar {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important; /* Pulls all items up to the top */
+  padding: 20px 12px !important;
+  gap: 5px;
 }
 
 /* v9-thi: chat rooms as left sidebar panel */
@@ -43,7 +50,6 @@
   flex-direction: column;
   overflow-y: auto;
   max-height: calc(100vh - 60px);
-  gap: 3px;
 }
 
 /* v10-thi: push local folder actions to bottom of sidebar */
