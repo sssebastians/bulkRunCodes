@@ -21,7 +21,7 @@
   align-items: stretch;
   width: 100vw;
   max-width: 100% !important;
-  height: calc(100vh-70px) ;
+  height: calc(100vh - 70px);
   max-height: calc(100vh - 70px);
   overflow: hidden ;
   position: relative;
