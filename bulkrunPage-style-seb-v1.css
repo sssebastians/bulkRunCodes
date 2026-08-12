@@ -1924,13 +1924,31 @@
   display: block !important;
 }
 
-/* 3. MAIN CONTENT / CARD HEADINGS (EXECUTIVE SUMMARY, METRICS, ETC.) */
-.chatbot-outer-wrapper #analysis-pane :is(h1, h2, h3, h4, h5, h6, .analysis-card-title-cid, .intel-header-cid h3) {
+.chatbot-outer-wrapper :is(h1, h2, h3, h4, h5, h6) {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-  font-size: 18px !important;         /* Adjust main card section title size */
-  font-weight: 700 !important;
+  font-size: 13px !important;         /* Adjust main card section title size */
+  font-weight: 650 !important;
   color: #1e293b !important;          /* Dark slate tone */
   text-transform: none !important;
   margin-bottom: 8px !important;
+}
+
+.chatbot-outer-wrapper .tokens-display-center .settings-btn,
+.chatbot-outer-wrapper .settings-btn,
+.create-room-btn,
+.rag-sidebar-new-btn
+{
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 10.5px !important;        /* Small, crisp text */
+  font-weight: 600 !important;
+  padding: 4px 8px !important;       /* Reduced padding for compact size */
+  height: 34px !important;           /* Fixed small height */
+  min-height: 28px !important;
+  line-height: 1 !important;
+  border-radius: 6px !important;     /* Slightly tighter corners */
+  white-space: nowrap !important;
+  text-transform: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
 </style>
