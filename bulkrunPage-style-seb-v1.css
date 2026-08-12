@@ -16,17 +16,14 @@
 /* v10-thi: full-width, stretch height to fill viewport */
 /* v12-thi: full-bleed to break out of Shopify theme page container */
 .chatbot-outer-wrapper {
-  display: flex;
+  display: flex ;
   flex-direction: row;
   align-items: stretch;
-  width: 100vw;
-  height: calc(100vh - 70px);
-  max-height: calc(100vh - 70px);
-  overflow: hidden;
+  width: 100%;
+  height: calc(100vh - 100px);
+  max-height: calc(100vh - 100px);;
+  overflow: hidden ;
   position: relative;
-  left: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
   margin-top: 0;
   gap: 0;
 }
