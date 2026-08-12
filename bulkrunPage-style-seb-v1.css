@@ -22,11 +22,19 @@
   width: 100vw;
   max-width: 100% !important;
   height: calc(100vh-70px) ;
-  min-height: calc(100vh - 70px);
-  max-height: 100% !important;
+  max-height: calc(100vh - 70px);
   overflow: hidden ;
   position: relative;
   margin-top: 0;
+}
+
+.chatbot-outer-wrapper .chat-input-wrapper,
+.chatbot-outer-wrapper .chat-input-container {
+  flex: 0 0 auto !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  background: #fff !important;
+  z-index: 10 !important;
 }
 
 .chat-rooms-sidebar {
