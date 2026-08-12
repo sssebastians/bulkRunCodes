@@ -448,6 +448,7 @@
 }
 
 /* Other miscellaneous styles */
+/* Updated Folder Inputs CSS */
 .folder-inputs {
   display: flex;
   gap: 8px;
@@ -461,9 +462,9 @@
 }
 
 .folder-inputs .storage-mode-selector {
-  min-width: 120px;
-  max-width: 180px;
-  flex: 0 1 170px;
+  min-width: 100px;
+  max-width: 140px;
+  flex: 0 0 auto;
   padding: 6px 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -475,34 +476,51 @@
 .output-folder-container {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px; /* Tightens space between elements */
+  flex-wrap: nowrap; /* Prevents wrapping onto multiple lines */
   width: 100%;
   min-width: 0;
 }
 
 .input-folder-container > span,
 .output-folder-container > span {
-  flex: 0 0 95px;
+  flex: 0 0 auto; /* Allow label size to adjust dynamically without taking fixed wide space */
   font-weight: 600;
+  white-space: nowrap;
+  font-size: 0.85rem;
 }
 
 #input-folder,
 #output-folder {
-  flex: 1 1 260px;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: 120px;
 }
 
 #choose-input-folder,
 #choose-output-folder,
+#choose-folder,
+#choose-gdrive,
+#choose-od-input,
+#choose-db-output,
+#choose-output,
+#choose-od-output,
 #view-folder-btn {
   flex: 0 0 auto;
+  padding: 6px 10px;
+  white-space: nowrap;
 }
 
+/* FIX: Ensure insertion values sit inline without taking 100% line width */
 #selected-input-folder,
 #selected-output-folder {
-  flex: 1 1 100%;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  color: #333;
 }
 
 .choose-db-input-btn,
