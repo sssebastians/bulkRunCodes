@@ -476,7 +476,7 @@
 .output-folder-container {
   display: flex;
   align-items: center;
-  gap: 6px; /* Tightens space between elements */
+  gap: 10px; /* Tightens space between elements */
   flex-wrap: nowrap; /* Prevents wrapping onto multiple lines */
   width: 100%;
   min-width: 0;
@@ -484,10 +484,21 @@
 
 .input-folder-container > span,
 .output-folder-container > span {
-  flex: 0 0 auto; /* Allow label size to adjust dynamically without taking fixed wide space */
+  flex: 0 0 110px; /* Allow label size to adjust dynamically without taking fixed wide space */
+  width: 110px;
   font-weight: 600;
   white-space: nowrap;
   font-size: 0.85rem;
+}
+
+.folder-inputs .storage-mode-selector {
+  flex: 0 0 120px;
+  width: 120px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #444;
 }
 
 #input-folder,
@@ -505,7 +516,7 @@
 #choose-output,
 #choose-od-output,
 #view-folder-btn {
-  flex: 0 0 auto;
+  flex: 0 0 80px;
   padding: 6px 10px;
   white-space: nowrap;
 }
