@@ -1945,7 +1945,7 @@
   height: 34px !important;           /* Fixed small height */
   min-height: 28px !important;
   line-height: 1 !important;
-  border-radius: 6px !important;     /* Slightly tighter corners */
+  border-radius: 4px !important;     /* Slightly tighter corners */
   white-space: nowrap !important;
   text-transform: none !important;
   display: inline-flex !important;
