@@ -451,13 +451,12 @@
 .folder-inputs {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 10px;
   flex-direction: column;
   width: 100%;
   min-width: 0;
   padding: 8px 10px;
   border-top: 1px solid #eee;
-  overflow-x: hidden;
 }
 
 .folder-inputs .storage-mode-selector {
@@ -475,7 +474,7 @@
 .output-folder-container {
   display: flex;
   align-items: center;
-  gap: 10px; /* Tightens space between elements */
+  gap: 6px; /* Tightens space between elements */
   flex-wrap: nowrap; /* Prevents wrapping onto multiple lines */
   width: 100%;
   min-width: 0;
@@ -483,7 +482,7 @@
 
 .input-folder-container > span,
 .output-folder-container > span {
-  flex: 0 0 70px; /* Allow label size to adjust dynamically without taking fixed wide space */
+  flex: 0 1 auto; /* Allow label size to adjust dynamically without taking fixed wide space */
   width: 110px;
   font-weight: 600;
   white-space: nowrap;
